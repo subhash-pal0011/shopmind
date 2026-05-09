@@ -9,8 +9,8 @@ if (!MONGO_URL) {
 let cached = global.mongoose;
 
 if (!cached) {
-       cached = global.mongoose = {conn: null,promise: null,};
-       
+       cached = global.mongoose = { conn: null, promise: null, };
+
 }
 
 async function connectDb() {
@@ -21,7 +21,12 @@ async function connectDb() {
 
        if (!cached.promise) {
               cached.promise = mongoose.connect(MONGO_URL, {
-                     bufferCommands: false,
+                     bufferCommands: false, // kyu false krte hii >>> “bufferCommands:false use kiya taki database disconnected hone par mongoose queries ko memory me buffer na kare aur direct error throw kare.”.
+
+                     // Short Yaad Karne Wali Line
+                     // bufferCommands: false.
+                     //        = wait mat karo
+                     //        = direct error do
               });
        }
 
