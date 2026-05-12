@@ -99,6 +99,6 @@ const userSchema = new mongoose.Schema(
               timestamps: true,
        }
 );
-
+userSchema.index({location:"2dsphere"})//2dsphere index MongoDB me location-based searching ke liye use hota hai. Isse nearby places ya users efficiently find kiye ja sakte hain.
 const User =  mongoose.models.User || mongoose.model("User", userSchema);
 export default User;
