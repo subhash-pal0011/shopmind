@@ -82,6 +82,16 @@ const userSchema = new mongoose.Schema(
                             ref: "Order",
                      },
               ],
+
+              location:{
+                     type:String,
+                     enum:["Point"],
+                     default:"Point",
+                     coordinates:{
+                            type:[Number],
+                            default:[0,0]
+                     }
+              },
               cart: [
                      {
                             product: {
@@ -99,6 +109,6 @@ const userSchema = new mongoose.Schema(
               timestamps: true,
        }
 );
-userSchema.index({location:"2dsphere"})//2dsphere index MongoDB me location-based searching ke liye use hota hai. Isse nearby places ya users efficiently find kiye ja sakte hain.
+userSchema.index({location:"2dsphere"})//2dsphere index MongoDB me location-based searching ke liye use hota hai.
 const User =  mongoose.models.User || mongoose.model("User", userSchema);
 export default User;
