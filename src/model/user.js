@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema(
                      type: String,
                      default: null,
               },
+              otpExp: {
+                     type: Date,
+                     default: null,
+              },
 
               userVerified: {
                      type: Boolean,
@@ -83,14 +87,16 @@ const userSchema = new mongoose.Schema(
                      },
               ],
 
-              location:{
-                     type:String,
-                     enum:["Point"],
-                     default:"Point",
-                     coordinates:{
-                            type:[Number],
-                            default:[0,0]
-                     }
+              location: {
+                     type: {
+                            type: String,
+                            enum: ["Point"],
+                            default: "Point",
+                     },
+                     coordinates: {
+                            type: [Number],
+                            default: [0, 0],
+                     },
               },
               cart: [
                      {
@@ -99,8 +105,8 @@ const userSchema = new mongoose.Schema(
                                    ref: "Product",
                             },
                             quantity: {
-                                   type:Number,
-                                   default:1
+                                   type: Number,
+                                   default: 1
                             }
                      }
               ]
@@ -109,6 +115,6 @@ const userSchema = new mongoose.Schema(
               timestamps: true,
        }
 );
-userSchema.index({location:"2dsphere"})//2dsphere index MongoDB me location-based searching ke liye use hota hai.
-const User =  mongoose.models.User || mongoose.model("User", userSchema);
+userSchema.index({ location: "2dsphere" })//2dsphere index MongoDB me location-based searching ke liye use hota hai.
+const User = mongoose.models.User || mongoose.model("User", userSchema);
 export default User;
