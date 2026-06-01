@@ -2,6 +2,7 @@ import connectDb from "@/lib/connectDb";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import User from "@/model/user";
+import { sendMail } from "@/utils/nodemailer";
 
 export async function POST(req) {
        try {
@@ -32,10 +33,15 @@ export async function POST(req) {
               }
 
               const hashPassword = await bcrypt.hash(password, 10);
+              const otp = Math.floor(1000 + Math.random() * 9000).toString();
+              const otpExp = Date.now() + 5 * 60 * 1000;
+              sendMail(email, otp)
 
               const userCreate = await User.create({
                      name,
                      email,
+                     otp,
+                     otpExp,
                      password: hashPassword,
               });
 
