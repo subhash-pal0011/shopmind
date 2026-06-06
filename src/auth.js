@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import connectDb from "./lib/connectDb";
 import User from "./model/user";
+import Google from "next-auth/providers/google";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
        providers: [
@@ -62,9 +63,47 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             }
                      },
               }),
+
+              Google({
+                     clientId: process.env.GOOGLE_CLIENT_ID,
+                     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+              })
        ],
 
        callbacks: {
+
+              async signIn({ user, account }) {
+                     if (account.provider === "google") {
+                            try {
+                                   await connectDb();
+
+                                   let findUser = await User.findOne({ email: user.email });
+
+                                   if (!findUser) {
+                                          findUser = await User.create({
+                                                 name: user.name,
+                                                 email: user.email,
+                                                 provider: "google",
+                                                 userVerified: true,
+                                                 userRole: "user",
+                                                 location: {
+                                                        type: "Point",
+                                                        coordinates: [0, 0],
+                                                 },
+                                          });
+                                   }
+
+                                   user.id = findUser._id.toString();
+                                   user.role = findUser.userRole;
+
+                                   return true;
+                            } catch (error) {
+                                   console.error("Google SignIn Error:", error);
+                                   return false;
+                            }
+                     }
+                     return true
+              },
               async jwt({ token, user }) {
                      if (user) {
                             token.id = user.id;
@@ -91,7 +130,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               signIn: "/login",
        },
 
-       session: { 
+       session: {
               strategy: "jwt", // User ka session JWT token ki help se manage ho raha hai.
               maxAge: 10 * 24 * 60 * 60,
        },
