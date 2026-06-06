@@ -12,6 +12,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import axios from "axios";
 import { toast } from "sonner";
 import OtpPage from "@/component/OtpPage";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const [show, setShow] = useState(true);
@@ -19,6 +21,7 @@ export default function RegisterPage() {
   const [otpPage, setOtpPage] = useState(false);
   const [otpEmail, setOtpEmail] = useState("");
   const [otpPassword, setOtpPassword] = useState("");
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -29,14 +32,33 @@ export default function RegisterPage() {
     try {
       const res = await axios.post("/api/auth/register", data);
       if (res.data.success) {
-        toast(res.data.message)
+        toast(res.data.message);
         setOtpPage(true);
         setOtpEmail(data.email);
-        setOtpPassword(data.password)
+        setOtpPassword(data.password);
       }
     } catch (error) {
       console.log("register error:", error);
-      toast(error?.response?.data?.message)
+      toast(error?.response?.data?.message);
+    }
+  }
+
+  const onLogin = async (data) => {
+    
+    try {
+      const res = await signIn("credentials",{email: data.email,password: data.password, redirect: false });
+                            
+      if (res.error) {
+        toast.error("Invalid email or password");
+        return;
+      }
+      if (res?.ok) {
+        toast.success("Logged in successfully");
+        router.push("/");
+      }
+    } catch (error) {
+      toast.error(error?.message || "Login failed");
+      console.log("login error:", error);
     }
   }
 
@@ -44,7 +66,9 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-linear-to-r from-blue-950 via-sky-900 to-cyan-500 flex items-center justify-center px-4 py-10 ">
 
       <AnimatePresence>
+
         <motion.div
+
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -40 }}
@@ -100,7 +124,8 @@ export default function RegisterPage() {
                   <FaTwitter />
                 </button>
 
-                <button className="w-11 h-11 rounded-full bg-red-500 hover:scale-110 duration-300 flex items-center justify-center">
+                <button onClick={()=>signIn("google", {callbackUrl:"/"})}
+                 className="w-11 h-11 rounded-full bg-red-500 hover:scale-110 duration-300 flex items-center justify-center">
                   <FaGoogle />
                 </button>
 
@@ -113,7 +138,7 @@ export default function RegisterPage() {
 
           {otpPage ?
             <>
-              <OtpPage otpEmail={otpEmail} otpPassword={otpPassword}/>
+              <OtpPage otpEmail={otpEmail} otpPassword={otpPassword} />
             </>
 
             :
@@ -127,7 +152,7 @@ export default function RegisterPage() {
                   {show ? "Register" : "Welcome Back"}
                 </h2>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 mt-10">
+                <form onSubmit={handleSubmit(show ? onSubmit : onLogin)} className="space-y-8 mt-10">
 
                   {/* Full Name */}
                   <AnimatePresence>
@@ -222,7 +247,7 @@ export default function RegisterPage() {
                   {/* Button */}
                   <div className="space-y-2">
                     <button className="w-full bg-sky-500 hover:bg-sky-600 duration-300 text-white py-3 rounded-lg shadow-lg font-semibold cursor-pointer text-center items-center justify-center flex">
-                      {isSubmitting ? <img src="/Loading.gif" className="h-8 bg-cover"/> : show ? "Sign Up" : "Login"}
+                      {isSubmitting ? <img src="/Loading.gif" className="h-8 bg-cover" /> : show ? "Sign Up" : "Login"}
                     </button>
 
                     <button
