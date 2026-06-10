@@ -7,7 +7,9 @@ export async function POST(req) {
        try {
               await connectDb();
 
+
               const { phone, role } = await req.json();
+
 
               const session = await auth();
 
@@ -20,7 +22,7 @@ export async function POST(req) {
 
               if (!phone || !role) {
                      return NextResponse.json(
-                            { success: false, message: "Phone and role are required" },
+                            { success: false, message: "Phone-Number and Role are required" },
                             { status: 400 }
                      );
               }
@@ -37,7 +39,7 @@ export async function POST(req) {
               }
 
               findUser.phone = phone;
-              findUser.role = role;
+              findUser.userRole = role;
 
               await findUser.save();
 
