@@ -1,12 +1,14 @@
 "use client";
-
 import Image from "next/image";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-
+import { motion } from "framer-motion";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 const EditRoleAurPhone = () => {
        const [selectedRole, setSelectedRole] = useState("");
+       const router = useRouter();
 
        const {
               register,
@@ -28,9 +30,14 @@ const EditRoleAurPhone = () => {
               console.log(formData);
 
               try {
-                     // API Call Here
+                     const res = await axios.post("/api/user/phoneEditRole" , formData);
+                     if(res.data.success){
+                            toast.success(res.data.message);
+                            router.push("/")
+                     }
               } catch (error) {
-                     console.log(error);
+                     console.log("Edit Role And PhoneNum Error : " , error);
+                     toast.error(error?.response?.data?.message)
               }
        };
 
@@ -56,8 +63,11 @@ const EditRoleAurPhone = () => {
        ];
 
        return (
-              <div className="min-h-screen flex items-center justify-center bg-linear-to-r from-blue-950 via-sky-900 to-cyan-500 p-4">
-                     <div className="w-full max-w-4xl rounded-3xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl p-6 md:p-10">
+              <div className="min-h-screen md:h-screen flex items-center justify-center bg-linear-to-r from-blue-950 via-sky-900 to-cyan-500 p-3">
+                     <motion.div initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.8 }}
+                            className="w-full max-w-4xl rounded-3xl bg-white/10 backdrop-blur-lg border border-white/20 shadow-2xl p-6 md:p-10">
 
                             {/* Heading */}
                             <div className="text-center mb-8">
@@ -80,20 +90,20 @@ const EditRoleAurPhone = () => {
                                                  type="tel"
                                                  placeholder="Enter mobile number"
                                                  {...register("phone", {
-                                                        required: "Mobile number is required",
+                                                        required: true,
                                                         pattern: {
                                                                value: /^[6-9]\d{9}$/,
                                                                message: "Enter a valid 10-digit mobile number",
                                                         },
                                                  })}
-                                                 className="w-xl bg-white rounded-xl px-4 py-3 outline-none border border-gray-300 focus:ring-2 focus:ring-cyan-500"
+                                                 className="w-full bg-white/20 text-white rounded-xl px-4 py-3 outline-none border border-gray-300 focus:ring-2 focus:ring-cyan-500"
                                           />
 
-                                          {errors.phone && (
-                                                 <p className="text-red-300 text-sm mt-2">
+                                          {/* {errors.phone && (
+                                                 <p className="text-red-300 text-xs mt-2">
                                                         {errors.phone.message}
                                                  </p>
-                                          )}
+                                          )} */}
                                    </div>
 
                                    {/* Roles */}
@@ -105,10 +115,9 @@ const EditRoleAurPhone = () => {
                                                         onClick={() => setSelectedRole(role.name)}
                                                         className={`p-6 rounded-2xl border transition-all duration-300 flex flex-col items-center 
                                                                ${selectedRole === role.name ? "border-cyan-400 bg-cyan-500/20 scale-105" : "border-white/20 bg-white/10 hover:bg-white/20"}`}
-                                                               
                                                  >
                                                         <Image src={role.image} alt={role.title} width={90} height={90}/>
-                                                        
+
 
                                                         <h3 className="text-xl font-semibold text-white mt-4">
                                                                {role.title}
@@ -139,7 +148,7 @@ const EditRoleAurPhone = () => {
                                           </button>
                                    </div>
                             </form>
-                     </div>
+                     </motion.div>
               </div>
        );
 };
