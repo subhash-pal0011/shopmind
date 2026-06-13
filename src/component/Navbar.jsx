@@ -105,13 +105,12 @@ const Navbar = () => {
           <p>Sign Out</p>
         </motion.div>
 
-
       </motion.div>
     </AnimatePresence>,
     document.body
   ) : null
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white shadow-md px-4 md:px-8 py-4">
+    <nav className="sticky top-0 z-50 w-full bg-white shadow-md px-4 md:px-8 py-4 md:py-2">
       <div className="max-w-7xl mx-auto flex items-center justify-around">
 
         {/* Logo */}
@@ -119,7 +118,7 @@ const Navbar = () => {
           <Image
             src="/logo-2.png"
             alt="ShopMind Logo"
-            width={180}
+            width={250}
             height={50}
             priority
           />
