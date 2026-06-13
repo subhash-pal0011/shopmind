@@ -47,11 +47,7 @@ const Navbar = () => {
         animate={{ x: 0 }}
         className="w-60 border h-screen fixed bg-gray-100 p-5 rounded-tr-xl rounded-br-xl space-y-5">
 
-        <div>
-          <p></p>
-        </div>
-
-
+  
         <motion.div initial={{ y: -40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -115,7 +111,7 @@ const Navbar = () => {
     document.body
   ) : null
   return (
-    <nav className="w-full bg-white shadow-md px-4 md:px-8 py-4">
+    <nav className="sticky top-0 z-50 w-full bg-white shadow-md px-4 md:px-8 py-4">
       <div className="max-w-7xl mx-auto flex items-center justify-around">
 
         {/* Logo */}
