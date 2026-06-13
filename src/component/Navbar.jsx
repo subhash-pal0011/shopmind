@@ -45,7 +45,7 @@ const Navbar = () => {
         key="menu"
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
-        className="w-60 border h-screen fixed bg-gray-100 p-5 rounded-tr-xl rounded-br-xl space-y-5">
+        className="w-60 inset-0 z-50 border h-screen fixed bg-gray-100 p-5 rounded-tr-xl rounded-br-xl space-y-5">
 
   
         <motion.div initial={{ y: -40, opacity: 0 }}
