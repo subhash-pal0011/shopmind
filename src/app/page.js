@@ -1,6 +1,9 @@
 import { auth } from "@/auth";
+import AdminDashBoard from "@/component/Admin/AdminDashBoard";
 import EditRoleAurPhone from "@/component/EditRoleAurPhone";
 import Navbar from "@/component/Navbar";
+import UserDashBoard from "@/component/User/UserDashBoard";
+import VendorDashBoard from "@/component/Vendor/VendorDashBoard";
 import connectDb from "@/lib/connectDb";
 import User from "@/model/user";
 import { redirect } from "next/navigation";
@@ -15,7 +18,6 @@ export default async function Home() {
   }
 
   const findUser = await User.findById(session.user.id);
-
   if (!findUser) {
     redirect("/register");
   }
@@ -25,8 +27,9 @@ export default async function Home() {
   if (isExists) return <EditRoleAurPhone />;
 
   return (
-    <div className="bg-gray-500">
+    <div>
       <Navbar />
+      {findUser?.userRole === "user" ? <UserDashBoard /> : findUser?.userRole === "vendor" ? <VendorDashBoard /> : <AdminDashBoard />}
     </div>
   );
 }
