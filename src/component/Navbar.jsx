@@ -232,7 +232,7 @@ const Navbar = ({ user }) => {
             </div>
           }
 
-          {user.userRole === "admin" &&
+          {user.userRole === "admin" || user.userRole === "vendor" &&
             <div className="flex gap-8">
               <FiPhoneCall
                 size={30}
