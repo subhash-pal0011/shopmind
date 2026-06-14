@@ -21,7 +21,6 @@ import { RiListUnordered } from "react-icons/ri";
 
 const Navbar = ({ user }) => {
 
-  console.log("user : ", user)
   const [menuShow, setMenuShow] = useState(false);
   const [sideBar, setSideBar] = useState(false);
 
