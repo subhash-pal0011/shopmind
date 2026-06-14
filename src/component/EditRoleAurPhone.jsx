@@ -131,11 +131,11 @@ const EditRoleAurPhone = () => {
                                    </div>
 
                                    {/* Selected Role */}
-                                   {selectedRole && (
-                                          <p className="text-center text-cyan-300 font-medium">
+                                   {/* {selectedRole && (
+                                          <p className="text-center text-cyan-300 font-xs">
                                                  Selected Role: {selectedRole}
                                           </p>
-                                   )}
+                                   )} */}
 
                                    {/* Submit */}
                                    <div className="text-center">
