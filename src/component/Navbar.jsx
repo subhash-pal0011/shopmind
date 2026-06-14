@@ -233,17 +233,17 @@ const Navbar = ({ user }) => {
           }
 
           {user.userRole === "admin" &&
-            <div className="flex gap-10">
+            <div className="flex gap-8">
               <FiPhoneCall
-                size={17}
-                className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all text-gray-600 duration-200"
+                size={30}
+                className="w-4 h-5 sm:w-7 sm:h-5 md:w-5 md:h-5 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all text-gray-600 duration-200"
               />
 
               <div className="relative">
                 <LuCircleUserRound
                   onClick={() => setMenuShow(!menuShow)}
-                  size={17}
-                  className="w-5 h-4 sm:w-6 sm:h-5 md:w-5 md:h-4 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
+                  size={30}
+                  className="w-4 h-5 sm:w-7 sm:h-5 md:w-5 md:h-5 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
                 />
                 <AnimatePresence>
                   {menuShow && (
