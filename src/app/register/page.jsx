@@ -44,10 +44,10 @@ export default function RegisterPage() {
   }
 
   const onLogin = async (data) => {
-    
+
     try {
-      const res = await signIn("credentials",{email: data.email,password: data.password, redirect: false });
-                            
+      const res = await signIn("credentials", { email: data.email, password: data.password, redirect: false });
+
       if (res.error) {
         toast.error("Invalid email or password");
         return;
@@ -106,6 +106,7 @@ export default function RegisterPage() {
                 Join ShopMind and explore a smart AI-powered
                 shopping experience with real-time features.
               </p>
+
             </div>
 
             <div className="relative z-10">
@@ -120,18 +121,18 @@ export default function RegisterPage() {
               </div>
 
               <div className="flex gap-15 justify-center ">
-                <button className="w-11 h-11 rounded-full bg-sky-500 hover:scale-110 duration-300 flex items-center justify-center">
+                {/* <button className="w-11 h-11 rounded-full bg-sky-500 hover:scale-110 duration-300 flex items-center justify-center">
                   <FaTwitter />
-                </button>
+                </button> */}
 
-                <button onClick={()=>signIn("google", {callbackUrl:"/"})}
-                 className="w-11 h-11 rounded-full bg-red-500 hover:scale-110 duration-300 flex items-center justify-center">
+                <button onClick={() => signIn("google", { callbackUrl: "/" })}
+                  className="w-11 h-11 rounded-full bg-red-500 hover:scale-110 duration-300 flex items-center justify-center cursor-pointer">
                   <FaGoogle />
                 </button>
 
-                <button className="w-11 h-11 rounded-full bg-blue-600 hover:scale-110 duration-300 flex items-center justify-center">
+                {/* <button className="w-11 h-11 rounded-full bg-blue-600 hover:scale-110 duration-300 flex items-center justify-center">
                   <FaFacebookF />
-                </button>
+                </button> */}
               </div>
             </div>
           </motion.div>
@@ -260,6 +261,26 @@ export default function RegisterPage() {
                   </div>
 
                 </form>
+                <div className="flex flex-col items-center justify-center w-full md:hidden">
+                  {/* OR Divider */}
+                  <div className="flex items-center gap-3 w-full my-4">
+                    <div className="flex-1 h-px bg-gray-300"></div>
+
+                    <p className="text-sm text-gray-500 font-medium">
+                      OR
+                    </p>
+
+                    <div className="flex-1 h-px bg-gray-300"></div>
+                  </div>
+
+                  {/* Google Sign In Button */}
+                  <button
+                    onClick={() => signIn("google", { callbackUrl: "/" })}
+                    className="w-11 h-11 rounded-full bg-red-500 text-white hover:scale-110 transition-transform duration-300 flex items-center justify-center cursor-pointer"
+                  >
+                    <FaGoogle size={18} />
+                  </button>
+                </div>
               </div>
             </>
           }
