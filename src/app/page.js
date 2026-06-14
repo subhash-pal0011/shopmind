@@ -18,6 +18,9 @@ export default async function Home() {
   }
 
   const findUser = await User.findById(session.user.id);
+
+  const user = JSON.parse(JSON.stringify(findUser));
+
   if (!findUser) {
     redirect("/register");
   }
@@ -28,7 +31,7 @@ export default async function Home() {
 
   return (
     <div>
-      <Navbar />
+      <Navbar user={user}/>
       {findUser?.userRole === "user" ? <UserDashBoard /> : findUser?.userRole === "vendor" ? <VendorDashBoard /> : <AdminDashBoard />}
     </div>
   );
