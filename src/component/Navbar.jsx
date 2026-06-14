@@ -19,7 +19,9 @@ import { RiListUnordered } from "react-icons/ri";
 
 
 
-const Navbar = () => {
+const Navbar = ({ user }) => {
+
+  console.log("user : ", user)
   const [menuShow, setMenuShow] = useState(false);
   const [sideBar, setSideBar] = useState(false);
 
@@ -47,7 +49,7 @@ const Navbar = () => {
         animate={{ x: 0 }}
         className="w-60 inset-0 z-50 border h-screen fixed bg-gray-100 p-5 rounded-tr-xl rounded-br-xl space-y-5">
 
-  
+
         <motion.div initial={{ y: -40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -96,8 +98,8 @@ const Navbar = () => {
           <p>Login</p>
         </motion.div>
 
-        <motion.div  onClick={()=>signOut()}
-        initial={{ y: -40, opacity: 0 }}
+        <motion.div onClick={() => signOut()}
+          initial={{ y: -40, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 1.6 }}
           className="flex gap-1.5 items-center text-red-500">
@@ -109,6 +111,7 @@ const Navbar = () => {
     </AnimatePresence>,
     document.body
   ) : null
+
   return (
     <nav className="sticky top-0 z-50 w-full bg-white shadow-md px-4 md:px-8 py-4 md:py-2">
       <div className="max-w-7xl mx-auto flex items-center justify-around">
@@ -126,11 +129,13 @@ const Navbar = () => {
 
         <div className="flex md:gap-20">
           {/* Desktop Menu */}
-          <div className="hidden lg:flex items-center gap-8 text-sm">
-            {["Home", "Categories", "Shop", "Other"].map((item) => (
-              <p
-                key={item}
-                className="
+
+          {user.userRole === "user" &&
+            <div className="hidden lg:flex items-center gap-8 text-sm">
+              {["Home", "Categories", "Shop", "Other"].map((item) => (
+                <p
+                  key={item}
+                  className="
                 cursor-pointer
                 text-gray-700
                 transition-all
@@ -148,83 +153,134 @@ const Navbar = () => {
                 after:duration-300
                 hover:after:w-full
                 "
-              >
-                {item}
-              </p>
-            ))}
-          </div>
+                >
+                  {item}
+                </p>
+              ))}
+            </div>
+          }
 
           {/* Icons */}
-          <div className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-8">
+          {user.userRole === "user" &&
+            <div className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-8">
 
-            <IoSearchOutline
-              size={20}
-              className="w-5 h-5 sm:w-7 sm:h-6 md:w-7 md:h-6 lg:w-10 lg:h-6 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
-            />
+              <IoSearchOutline
+                size={20}
+                className="w-5 h-5 sm:w-7 sm:h-6 md:w-7 md:h-6 lg:w-10 lg:h-6 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
+              />
 
-
-            <FiPhoneCall
-              size={17}
-              className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all text-gray-600 duration-200"
-            />
-
-            <LuShoppingCart
-              className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-10 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
-            />
-
-            <div className="relative">
-              <LuCircleUserRound
-                onClick={() => setMenuShow(!menuShow)}
+              <FiPhoneCall
                 size={17}
-                className="w-5 h-4 sm:w-6 sm:h-5 md:w-7 md:h-6 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600 hidden lg:flex"
+                className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all text-gray-600 duration-200"
               />
 
-              <AnimatePresence>
-                {menuShow && (
-                  <motion.div initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10, ease: "ease-in" }}
-                    transition={{ duration: 0.20, ease: "easeOut" }}
-                    className="absolute right-0 top-10 w-36 bg-white shadow-lg rounded-md border py-2 z-50 p-1">
+              <LuShoppingCart
+                className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-10 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
+              />
 
-                    {menuItems.map((item, index) => (
-                      <div
-                        key={index}
-                        onClick={() => {
-                          if (item.label === "Sign Out") {
-                            signOut();
-                          }
-                        }}
-                        className="p-2 hover:bg-gray-100 cursor-pointer transition-all flex items-center gap-1 rounded"
-                      >
-                        {item.icon}
+              <div className="relative">
+                <LuCircleUserRound
+                  onClick={() => setMenuShow(!menuShow)}
+                  size={17}
+                  className="w-5 h-4 sm:w-6 sm:h-5 md:w-7 md:h-6 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600 hidden lg:flex"
+                />
 
-                        <p
-                          className={`text-sm ${item.label === "Sign Out" ? "text-red-500" : ""
-                            }`}
+                <AnimatePresence>
+                  {menuShow && (
+                    <motion.div initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10, ease: "ease-in" }}
+                      transition={{ duration: 0.20, ease: "easeOut" }}
+                      className="absolute right-0 top-10 w-36 bg-white shadow-lg rounded-md border py-2 z-50 p-1">
+
+                      {menuItems.map((item, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            if (item.label === "Sign Out") {
+                              signOut();
+                            }
+                          }}
+                          className="p-2 hover:bg-gray-100 cursor-pointer transition-all flex items-center gap-1 rounded"
                         >
-                          {item.label}
-                        </p>
-                      </div>
-                    ))}
+                          {item.icon}
 
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                          <p
+                            className={`text-sm ${item.label === "Sign Out" ? "text-red-500" : ""
+                              }`}
+                          >
+                            {item.label}
+                          </p>
+                        </div>
+                      ))}
+
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {sideBar ? (
+                <RxCross2
+                  onClick={() => setSideBar(prev => !prev)}
+                  className="w-6 h-5 sm:w-6 sm:h-5 md:w-7 md:h-6 lg:hidden cursor-pointer text-red-500"
+                />
+              ) : (
+                <HiMiniBars3
+                  onClick={() => setSideBar(prev => !prev)}
+                  className="w-6 h-4 sm:w-6 sm:h-5 md:w-7 md:h-6 text-gray-600 lg:hidden cursor-pointer"
+                />
+              )}
             </div>
+          }
 
-            {sideBar ? (
-              <RxCross2
-                onClick={() => setSideBar(prev => !prev)}
-                className="w-6 h-5 sm:w-6 sm:h-5 md:w-7 md:h-6 lg:hidden cursor-pointer text-red-500"
+          {user.userRole === "admin" &&
+            <div className="flex gap-10">
+              <FiPhoneCall
+                size={17}
+                className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all text-gray-600 duration-200"
               />
-            ) : (
-              <HiMiniBars3
-                onClick={() => setSideBar(prev => !prev)}
-                className="w-6 h-4 sm:w-6 sm:h-5 md:w-7 md:h-6 text-gray-600 lg:hidden cursor-pointer"
-              />
-            )}
-          </div>
+
+              <div className="relative">
+                <LuCircleUserRound
+                  onClick={() => setMenuShow(!menuShow)}
+                  size={17}
+                  className="w-5 h-4 sm:w-6 sm:h-5 md:w-5 md:h-4 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
+                />
+                <AnimatePresence>
+                  {menuShow && (
+                    <motion.div initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10, ease: "ease-in" }}
+                      transition={{ duration: 0.20, ease: "easeOut" }}
+                      className="absolute right-0 top-10 w-36 bg-white shadow-lg rounded-md border py-2 z-50 p-1">
+
+                      {menuItems.map((item, index) => (
+                        <div
+                          key={index}
+                          onClick={() => {
+                            if (item.label === "Sign Out") {
+                              signOut();
+                            }
+                          }}
+                          className="p-2 hover:bg-gray-100 cursor-pointer transition-all flex items-center gap-1 rounded"
+                        >
+                          {item.icon}
+
+                          <p
+                            className={`text-sm ${item.label === "Sign Out" ? "text-red-500" : ""
+                              }`}
+                          >
+                            {item.label}
+                          </p>
+                        </div>
+                      ))}
+
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          }
         </div>
       </div>
       {element}
