@@ -5,6 +5,7 @@ import Footer from "@/component/Footer";
 import Navbar from "@/component/Navbar";
 import UserDashBoard from "@/component/User/UserDashBoard";
 import VendorDashBoard from "@/component/Vendor/VendorDashBoard";
+import VendorPage from "@/component/Vendor/VendorPage";
 import VendorInfo from "@/component/VendorInfo";
 import connectDb from "@/lib/connectDb";
 import User from "@/model/user";
@@ -40,7 +41,7 @@ export default async function Home() {
   return (
     <div>
       <Navbar user={user}/>
-      {findUser?.userRole === "user" ? <UserDashBoard /> : findUser?.userRole === "vendor" ? <VendorDashBoard /> : <AdminDashBoard />}
+      {findUser?.userRole === "user" ? <UserDashBoard /> : findUser?.userRole === "vendor" ? <VendorPage user={user}/> : <AdminDashBoard />}
       <Footer user={user} />
     </div>
   );
