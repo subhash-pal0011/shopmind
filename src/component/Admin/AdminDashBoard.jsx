@@ -1,7 +1,7 @@
 "use client";
-import { HiMiniBars3 } from "react-icons/hi2";
 import { AnimatePresence, motion } from "motion/react";
 import { LuLayoutGrid } from "react-icons/lu";
+import { HiMiniBars3 } from "react-icons/hi2";
 import { FaStore } from "react-icons/fa";
 import { BsBag } from "react-icons/bs";
 import { MdVerified } from "react-icons/md";
@@ -9,8 +9,16 @@ import { BsBoxSeam } from "react-icons/bs";
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { RxCross2 } from "react-icons/rx";
+import Dashboard from "./Dashboard";
+import VendorDetails from "./VendorDetails";
+import UserOrders from "./UserOrders";
+import VendorApproval from "./VendorApproval";
+import ProductRequests from "./ProductRequests";
 
 const AdminDashBoard = () => {
+
+  const [active, setActive] = useState(1);
+  const [sideBarShow, setSideBarShow] = useState(false);
 
   const bar = [
     { id: 1, name: "Dashboard", icon: <LuLayoutGrid /> },
@@ -19,8 +27,6 @@ const AdminDashBoard = () => {
     { id: 4, name: "Vendor Approval", icon: <MdVerified /> },
     { id: 5, name: "Product Requests", icon: <BsBoxSeam /> },
   ];
-  const [active, setActive] = useState(0);
-  const [sideBarShow, setSideBarShow] = useState(false);
 
   const sideBar = sideBarShow ? createPortal(
     <AnimatePresence>
@@ -33,18 +39,18 @@ const AdminDashBoard = () => {
 
         <div className="flex items-center justify-between">
           <p>Menue</p>
-          <RxCross2 className="cursor-pointer" onClick={()=>setSideBarShow(prev => !prev)}/>
+          <RxCross2 className="cursor-pointer" onClick={() => setSideBarShow(prev => !prev)} />
         </div>
 
         {bar.map((item) => (
-          <motion.div key={item.id} onClick={()=>setActive(item.id)}
-          initial={{ y: -40, opacity: 0 }}
+          <motion.div key={item.id} onClick={() => setActive(item.id)}
+            initial={{ y: -40, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.5 }}
             className={`flex gap-1.5 items-center border py-3 p-1.5 rounded bg-white shadow-xl cursor-pointer ${active === item.id
-              ? "scale-110 bg-blue-100 shadow-lg border transition-all duration-300 border-blue-400"  :
+              ? "scale-110 bg-blue-100 shadow-lg border transition-all duration-300 border-blue-400" :
 
-               "hover:scale-105 bg-white transition"
+              "hover:scale-105 bg-white transition"
               }`}>
             <span className="text-md text-blue-500">{item.icon}</span>
             <p className="font-medium text-gray-700 text-xs">{item.name}</p>
@@ -56,50 +62,71 @@ const AdminDashBoard = () => {
     document.body
   ) : null
 
+  const renderPage = () => {
+    switch (active) {
+      case 1: return <Dashboard />
+      case 2: return <VendorDetails />
+      case 3: return <UserOrders />
+      case 4: return <VendorApproval />
+      case 5: return <ProductRequests />
+    }
+  }
+
   return (
     <div className="w-full min-h-screen bg-gray-100">
 
       <div className="h-1"></div>
 
-      {/* SIDEBAR FOR SMALL SCREEN */}
-      {!sideBarShow && <AnimatePresence>
-        <motion.div
-          className="px-1.5 md:px-5 md:hidden "
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 50, opacity: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-        >
-          <div className="flex items-center justify-between border p-2 py-3 bg-gray-50 px-5">
-            <h3 className="text-xs">Admin Panel</h3>
-            <HiMiniBars3 className="cursor-pointer" onClick={() => setSideBarShow(prev => !prev)} />
-          </div>
-        </motion.div>
-      </AnimatePresence>}
+      <div className="gap-3 flex">
 
-
-      {/* SIDEBAR FOR LG SCREEN */}
-      <motion.div initial={{ x: -100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="space-y-3 max-w-60 bg-gray-200 h-screen p-2 px-4 hidden md:block">
-
-        {bar.map((item) => (
-          <div key={item.id}
-            onClick={() => setActive(item.id)}
-
-            className={`flex items-center gap-3 p-3 max-w-50 bg-white rounded-lg shadow hover:shadow-md cursor-pointer transition hover:scale-110 
-              ${active === item.id
-                ? "scale-110 bg-blue-100 shadow-lg border transition-all duration-300 border-blue-400"
-                : "hover:scale-105 bg-white transition"
-              }`}
+        {/* SIDEBAR FOR SMALL SCREEN */}
+        {!sideBarShow && <AnimatePresence>
+          <motion.div
+            className="px-1.5 md:px-5 md:hidden "
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 50, opacity: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           >
-            <span className="text-md text-blue-500">{item.icon}</span>
-            <p className="font-medium text-gray-700 text-xs">{item.name}</p>
-          </div>
-        ))}
-      </motion.div>
+            <div className="flex items-center justify-between border p-2 py-3 bg-gray-50 px-5">
+              <h3 className="text-xs">Admin Panel</h3>
+              <HiMiniBars3 className="cursor-pointer" onClick={() => setSideBarShow(prev => !prev)} />
+            </div>
+          </motion.div>
+        </AnimatePresence>}
 
+
+        {/* SIDEBAR FOR LG SCREEN */}
+        <motion.div initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="space-y-3 w-60 bg-gray-200 h-screen p-4 px-4 hidden md:block">
+
+          {bar.map((item) => (
+            <div key={item.id}
+              onClick={() => setActive(item.id)}
+
+              className={`flex items-center gap-3 p-3 max-w-50 bg-white rounded-lg shadow hover:shadow-md cursor-pointer transition hover:scale-110 
+              ${active === item.id
+                  ? "scale-110 bg-blue-100 shadow-lg border transition-all duration-300 border-blue-400"
+                  : "hover:scale-105 bg-white transition"
+                }`}
+            >
+              <span className="text-md text-blue-500">{item.icon}</span>
+              <p className="font-medium text-gray-700 text-xs">{item.name}</p>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* RENDOR-PAGE-COMPONENT */}
+        <motion.div initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.9 }}
+        >
+          {renderPage()}
+        </motion.div>
+
+      </div>
       {sideBar}
     </div>
   );
