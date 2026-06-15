@@ -5,6 +5,11 @@ import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 import { GoArrowLeft } from "react-icons/go";
 import { LuArrowRight } from "react-icons/lu";
+import { GiClothes } from "react-icons/gi";
+import { FaShoePrints, FaBook, FaBasketballBall } from "react-icons/fa";
+import { MdOutlineElectricalServices, MdPhoneAndroid } from "react-icons/md";
+import { IoSparkles } from "react-icons/io5";
+import { GiKitchenKnives } from "react-icons/gi";
 
 
 const Categoreis = () => {
@@ -12,14 +17,14 @@ const Categoreis = () => {
        const [hover, setHover] = useState(false);
 
        const categories = [
-              { id: 1, name: "Fashion", image: "/fashion.gif" },
-              { id: 2, name: "Shoes", image: "/shoes.gif" },
-              { id: 3, name: "Electronics", image: "/electronics.gif" },
-              { id: 4, name: "Digital", image: "/phone.gif" },
-              { id: 5, name: "Beauty", image: "/beauty.gif" },
-              { id: 6, name: "Home & Kitchen", image: "/HomeKichen.gif" },
-              { id: 7, name: "Books", image: "/Books.gif" },
-              { id: 8, name: "Sports", image: "/sport.gif" },
+              { id: 1, name: "Fashion", icon: <GiClothes /> },
+              { id: 2, name: "Shoes", icon: <FaShoePrints /> },
+              { id: 3, name: "Electronics", icon: <MdOutlineElectricalServices /> },
+              { id: 4, name: "Digital", icon: <MdPhoneAndroid /> },
+              { id: 5, name: "Beauty", icon: <IoSparkles /> },
+              { id: 6, name: "Home & Kitchen", icon: <GiKitchenKnives /> },
+              { id: 7, name: "Books", icon: <FaBook /> },
+              { id: 8, name: "Sports", icon: <FaBasketballBall /> },
        ];
 
        const leftScroll = () => {
@@ -70,7 +75,7 @@ const Categoreis = () => {
                             transition={{ duration: 0.6 }}
                             className="space-y-5 relative py-">
 
-                            <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800">
+                            <h2 className="text-2xl md:text-xl font-bold text-center text-gray-800">
                                    Shop by Category
                             </h2>
 
@@ -83,16 +88,12 @@ const Categoreis = () => {
                                    {categories.map((item) => (
                                           <motion.div
                                                  key={item.id}
-
                                                  className="min-w-45 bg-white rounded-2xl shadow-md hover:shadow-xl cursor-pointer p-4 flex flex-col items-center"
                                           >
-                                                 <div className="relative w-24 h-24 rounded-full overflow-hidden ">
-                                                        <Image
-                                                               src={item.image}
-                                                               alt={item.name}
-                                                               fill
-                                                               className="object-cover hover:scale-150 transition-all duration-300"
-                                                        />
+                                                 <div className="w-24 h-24 rounded-full flex items-center justify-center bg-gray-100">
+                                                        <span className="text-5xl text-blue-500">
+                                                               {item.icon}
+                                                        </span>
                                                  </div>
 
                                                  <p className="mt-4 text-center font-semibold text-gray-800">
