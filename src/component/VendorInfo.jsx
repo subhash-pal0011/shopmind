@@ -1,20 +1,33 @@
 "use client";
-
 import React from "react";
 import { useForm } from "react-hook-form";
 import { motion } from "motion/react";
 import { FaStore, FaMapMarkerAlt } from "react-icons/fa";
 import { MdBusinessCenter } from "react-icons/md";
+import axios from "axios";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const VendorInfo = () => {
+       const router = useRouter();
        const {
               register,
               handleSubmit,
-              formState: { errors , isSubmitting},
+              formState: { errors, isSubmitting },
        } = useForm();
 
-       const onSubmit = (data) => {
-              console.log(data);
+       const onSubmit = async (data) => {
+              try {
+                     const res = await axios.post("/api/vendor/editProfile", data);
+                     if (res.data.success) {
+                            toast.success(res.data.message)
+                            router.push("/")
+                            
+                     }
+              } catch (error) {
+                     console.log("Vendor-Info error:", error);
+                     toast(error?.response?.data?.message)
+              }
        };
 
        return (
@@ -102,9 +115,10 @@ const VendorInfo = () => {
                                           type="submit"
                                           className="w-full bg-white text-blue-900 font-semibold py-3 rounded-xl hover:scale-105 transition-all duration-300 cursor-pointer mt-2 items-center justify-center flex"
                                    >
-                                          {isSubmitting ? <img src="/Loading.gif" className=" w-7"/>  : "Activate Vendor Account"}
+                                          {isSubmitting ? <img src="/Loading.gif" className=" w-7" /> : "Activate Vendor Account"}
                                    </button>
                             </form>
+                            
                      </motion.div>
               </div>
        );
