@@ -17,8 +17,6 @@ import { MdOutlineShoppingBag } from "react-icons/md";
 import { RiListUnordered } from "react-icons/ri";
 
 
-
-
 const Navbar = ({ user }) => {
 
   const [menuShow, setMenuShow] = useState(false);
@@ -160,7 +158,7 @@ const Navbar = ({ user }) => {
           }
 
           {/* Icons */}
-          {user.userRole === "user" &&
+          {user.userRole === "user" ?
             <div className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-8">
 
               <IoSearchOutline
@@ -230,9 +228,7 @@ const Navbar = ({ user }) => {
                 />
               )}
             </div>
-          }
-
-          {user.userRole === "admin" || user.userRole === "vendor" &&
+            :
             <div className="flex gap-8">
               <FiPhoneCall
                 size={30}
@@ -280,6 +276,7 @@ const Navbar = ({ user }) => {
               </div>
             </div>
           }
+
         </div>
       </div>
       {element}
