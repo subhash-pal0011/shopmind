@@ -1,9 +1,11 @@
 import { auth } from "@/auth";
 import AdminDashBoard from "@/component/Admin/AdminDashBoard";
 import EditRoleAurPhone from "@/component/EditRoleAurPhone";
+import Footer from "@/component/Footer";
 import Navbar from "@/component/Navbar";
 import UserDashBoard from "@/component/User/UserDashBoard";
 import VendorDashBoard from "@/component/Vendor/VendorDashBoard";
+import VendorInfo from "@/component/VendorInfo";
 import connectDb from "@/lib/connectDb";
 import User from "@/model/user";
 import { redirect } from "next/navigation";
@@ -21,18 +23,25 @@ export default async function Home() {
 
   const user = JSON.parse(JSON.stringify(findUser));
 
-  if (!findUser) {
+  if (!findUser) { // USER REGISTER YA LOGIN NHI HII REDIRECT KR DO REGISTER PAGE PR. 
     redirect("/register");
   }
 
-  const isExists = !findUser?.phone || !findUser?.userRole || (!findUser?.phone && !findUser?.userRole === "user");
-
+  const isExists = !findUser?.phone || !findUser?.userRole || (!findUser?.phone && !findUser?.userRole === "user"); // IS USER ROLE AND PHONE NUMER NHI HII TO RETIRUN KR DO <EditRoleAurPhone /> IS PAGE PR.
   if (isExists) return <EditRoleAurPhone />;
 
+
+  if(user.userRole === "vendor"){
+    const isCompletedInfo = !user.shopName || !user.shopAddress || !user.gstNumber
+    if(isCompletedInfo){
+      return <VendorInfo />
+    }
+  }
   return (
     <div>
       <Navbar user={user}/>
       {findUser?.userRole === "user" ? <UserDashBoard /> : findUser?.userRole === "vendor" ? <VendorDashBoard /> : <AdminDashBoard />}
+      <Footer user={user} />
     </div>
   );
 }
