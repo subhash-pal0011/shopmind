@@ -77,7 +77,7 @@ const AdminDashBoard = () => {
 
       <div className="h-1"></div>
 
-      <div className="gap-3 flex">
+      <div className="flex flex-col md:flex-row w-full gap-2">
 
         {/* SIDEBAR FOR SMALL SCREEN */}
         {!sideBarShow && <AnimatePresence>
