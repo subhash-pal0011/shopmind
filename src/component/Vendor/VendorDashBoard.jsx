@@ -111,7 +111,7 @@ const VendorDashBoard = () => {
         </motion.div>
 
         {/* RENDOR-PAGE-COMPONENT */}
-        <motion.div className='bg-gray-100 shadow-[0_1px_10px_rgba(0,0,0,0.12)] p-5 w-full'
+        <motion.div className='bg-gray-100 h-screen shadow-[0_0.5px_10px_rgba(0,0,0,0.12)] p-5 w-full'
         initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.9 }}
