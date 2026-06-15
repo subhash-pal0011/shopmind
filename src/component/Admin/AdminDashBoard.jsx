@@ -119,7 +119,8 @@ const AdminDashBoard = () => {
         </motion.div>
 
         {/* RENDOR-PAGE-COMPONENT */}
-        <motion.div initial={{ y: 50, opacity: 0 }}
+        <motion.div className="w-full"
+         initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.9 }}
         >
