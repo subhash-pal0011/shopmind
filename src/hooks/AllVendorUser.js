@@ -22,11 +22,11 @@ const AllVendorUser = () => {
                             );
                      }
               };
-
               getAllVendorUser();
        }, [dispatch]);
-
+       
        return null;
 };
 
 export default AllVendorUser;
+
