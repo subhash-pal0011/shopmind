@@ -8,14 +8,15 @@ import { useSelector } from 'react-redux'
 const AppInit = ({ children }) => {
        const userData = useSelector((state) => state.user.userData);
        const userId = userData?._id;
+       
 
        useEffect(() => {
               if (userId) {
                      const socket  = socketConnection();
-
+                     
                      socket.emit("userId", userId);
-
-              } else {
+              } 
+              else {
                      disconnectSocket();
               }
        }, [userId]);
