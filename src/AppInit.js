@@ -11,7 +11,10 @@ const AppInit = ({ children }) => {
 
        useEffect(() => {
               if (userId) {
-                     socketConnection();
+                     const socket  = socketConnection();
+
+                     socket.emit("userId", userId);
+
               } else {
                      disconnectSocket();
               }
