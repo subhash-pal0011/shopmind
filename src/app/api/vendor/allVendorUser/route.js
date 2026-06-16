@@ -1,4 +1,5 @@
 import connectDb from "@/lib/connectDb";
+import eventHandler from "@/lib/eventHandlor";
 import User from "@/model/user";
 import { NextResponse } from "next/server";
 
@@ -21,6 +22,8 @@ export async function GET() {
                      );
               }
 
+              await eventHandler("new-approvel-for-notification" , vendorUsers);
+              
               return NextResponse.json(
                      {
                             success: true,
