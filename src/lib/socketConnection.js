@@ -10,7 +10,7 @@ export const socketConnection = () => {
               }
 
               if (!socket) {
-                     //  process.env.NEXT_PUBLIC_NODE_SOCKET_UR  Agar ye line hata do: to Socket.IO pehle polling try karega, phir WebSocket par switch hoga.
+                     //process.env.NEXT_PUBLIC_NODE_SOCKET_UR  Agar ye line hata do: to Socket.IO pehle polling try karega, phir WebSocket par switch hoga.
                      socket = io(process.env.NEXT_PUBLIC_NODE_SOCKET_URL, {
 
                             transports: ["websocket"], // Agar ye line laga do: to Socket.IO bolega: "Mujhe polling nahi chahiye, main seedha WebSocket se connect karunga."
