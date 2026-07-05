@@ -9,21 +9,22 @@ export async function GET() {
 
               const vendorUsers = await User.find({
                      userRole: "vendor",
+                     approvalStatus: "pending",
               }).sort({ createdAt: -1 }).lean();
-                     
 
               if (vendorUsers.length === 0) {
                      return NextResponse.json(
                             {
-                                   success: false,
-                                   message: "No vendors found",
+                                   success: true,
+                                   data: [],
+                                   message: "No pending vendors",
                             },
-                            { status: 404 }
+                            { status: 200 }
                      );
               }
 
-              await eventHandler("new-approvel-for-notification" , vendorUsers);
-              
+              await eventHandler("new-approvel-for-notification", vendorUsers);
+
               return NextResponse.json(
                      {
                             success: true,
