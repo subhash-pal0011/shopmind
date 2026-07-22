@@ -3,8 +3,7 @@ import React from 'react'
 const VendorDashboards = () => {
   return (
     <div>
-
-VendorDashboards
+      VendorDashboards
     </div>
   )
 }

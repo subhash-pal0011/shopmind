@@ -15,26 +15,46 @@ import { GoHome } from "react-icons/go";
 import { LuLayoutGrid } from "react-icons/lu";
 import { MdOutlineShoppingBag } from "react-icons/md";
 import { RiListUnordered } from "react-icons/ri";
-
+import { useRouter } from "next/navigation";
 
 const Navbar = ({ user }) => {
 
   const [menuShow, setMenuShow] = useState(false);
   const [sideBar, setSideBar] = useState(false);
+  const router = useRouter();
+
+  // const menuItems = [
+  //   {
+  //     icon: <LuCircleUserRound size={15} />,
+  //     label: "Profile",
+  //     onClick: () => router.push("/edit-profile"),
+  //   },
+  //   {
+  //     icon: <PiSignIn />,
+  //     label: "Sign In",
+  //   },
+  //   {
+  //     icon: <PiSignOutFill color="red" />,
+  //     label: "Sign Out",
+  //     danger: true,
+  //   },
+  // ];
 
   const menuItems = [
     {
       icon: <LuCircleUserRound size={15} />,
       label: "Profile",
+      onClick: () => router.push("/edit-profile"),
     },
     {
       icon: <PiSignIn />,
       label: "Sign In",
+      onClick: () => router.push("/register"),
     },
     {
       icon: <PiSignOutFill color="red" />,
       label: "Sign Out",
-      danger: true,
+      onClick: () => signOut(),
     },
   ];
 
@@ -193,19 +213,11 @@ const Navbar = ({ user }) => {
                       {menuItems.map((item, index) => (
                         <div
                           key={index}
-                          onClick={() => {
-                            if (item.label === "Sign Out") {
-                              signOut();
-                            }
-                          }}
+                          onClick={() => item.onClick?.()}
                           className="p-2 hover:bg-gray-100 cursor-pointer transition-all flex items-center gap-1 rounded"
                         >
                           {item.icon}
-
-                          <p
-                            className={`text-sm ${item.label === "Sign Out" ? "text-red-500" : ""
-                              }`}
-                          >
+                          <p className={`text-sm ${item.label === "Sign Out" ? "text-red-500" : ""}`}>
                             {item.label}
                           </p>
                         </div>
@@ -241,6 +253,8 @@ const Navbar = ({ user }) => {
                   size={30}
                   className="w-4 h-5 sm:w-7 sm:h-5 md:w-5 md:h-5 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
                 />
+
+
                 <AnimatePresence>
                   {menuShow && (
                     <motion.div initial={{ opacity: 0, y: -10 }}
