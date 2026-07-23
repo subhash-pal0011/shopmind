@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useEffect } from "react";
 import VendorDashBoard from "./VendorDashBoard";
 import { AnimatePresence, motion } from "motion/react";
 import axios from "axios";
@@ -24,7 +24,12 @@ const VendorPage = ({ user }) => {
 
   const [showForm, setShowForm] = React.useState(false);
 
+
   const onSubmit = async (data) => {
+    if(!data.shopName ||  !data.gstNumber || !data.address) {
+      toast.error("Please fill in all fields");
+      return;
+    }
     try {
       const res = await axios.post("/api/vendor/updateVendorInformation", {
         shopName: data.shopName,
@@ -36,10 +41,8 @@ const VendorPage = ({ user }) => {
 
       if (res.data.success) {
         toast.success(res.data.message);
-        setShowForm(false);
-
-        // Form reset
         reset();
+        setShowForm(false);
         // setTimeout(() => {
         //   window.location.reload();
         // }, 1000);

@@ -47,9 +47,9 @@ export async function POST(req) {
 
     const body = await req.json();
 
-    const { shopName, phone, gstNumber, address} = body;
+    const { shopName, phone, gstNumber, address } = body;
 
-    if(!shopName || !phone || !gstNumber || !address){
+    if (!shopName || !phone || !gstNumber || !address) {
       return NextResponse.json(
         {
           success: false,
@@ -73,10 +73,18 @@ export async function POST(req) {
     await user.save();
 
     // Send Updated Pending Vendor List
-    const pendingVendors = await User.find({userRole: "vendor", approvalStatus: "pending"}).sort({ createdAt: -1 }).lean();
-      
+    const pendingVendors = await User.find({
+      userRole: "vendor",
+      approvalStatus: "pending",
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
-    await eventHandler("new-approvel-for-notification", pendingVendors);
+    // await eventHandler("new-approvel-for-notification", pendingVendors);
+    await eventHandler(`vendor-status-${user._id}`, {
+      approvalStatus: "pending",
+      message: "Vendor request submitted successfully",
+    });
 
     return NextResponse.json({
       success: true,

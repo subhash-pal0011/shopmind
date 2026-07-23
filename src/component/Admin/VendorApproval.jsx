@@ -40,6 +40,7 @@ const VendorApproval = () => {
     }
   };
 
+  
   // REAL TIME GET-VENDORS
   useEffect(() => {
     getVendors();
@@ -60,6 +61,8 @@ const VendorApproval = () => {
       disconnectSocket();
     };
   }, []);
+
+  
 
   // STATUS APPROVED API FUNCTION.
   const handleApprove = async (vendorId) => {
