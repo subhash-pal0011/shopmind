@@ -1,221 +1,120 @@
-// import { auth } from "@/auth";
-// import connectDb from "@/lib/connectDb";
-// import User from "@/model/user";
-// import { NextResponse } from "next/server";
-
-// export async function POST(req) {
-//        try {
-//               await connectDb();
-
-//               // admin check
-//               const session = await auth();
-
-//               const admin = await User.findOne({ email: session?.user?.email });
-
-//               if (!admin || admin.userRole !== "admin") {
-//                      return NextResponse.json(
-//                             {
-//                                    success: false,
-//                                    message: "Unauthorized: Admin access only",
-//                             },
-//                             { status: 403 }
-//                      );
-//               }
-
-//               // request body
-//               const { vendorId, status, rejectionReason } = await req.json();
-
-//               if (!vendorId || !status) {
-//                      return NextResponse.json(
-//                             {
-//                                    success: false,
-//                                    message: "vendorId and status required",
-//                             },
-//                             { status: 400 }
-//                      );
-//               }
-
-//               // 🔥 find vendor
-//               const vendor = await User.findById(vendorId);
-
-//               if (!vendor) {
-//                      return NextResponse.json(
-//                             {
-//                                    success: false,
-//                                    message: "Vendor not found",
-//                             },
-//                             { status: 404 }
-//                      );
-//               }
-
-//               // 🔥 APPROVE
-//               if (status === "approved") {
-//                      vendor.approvalStatus = "approved";
-//                      vendor.requestApprovedAt = new Date();
-//                      vendor.rejectionReason = null;
-
-//                      await vendor.save();
-
-//                      return NextResponse.json({
-//                             success: true,
-//                             message: "Vendor approved successfully",
-//                      });
-//               }
-
-//               // 🔥 REJECT
-//               if (status === "rejected") {
-//                      vendor.approvalStatus = "rejected";
-//                      vendor.rejectionReason = rejectionReason || "Not specified";
-//                      vendor.requestApprovedAt = new Date();
-
-//                      await vendor.save();
-
-//                      return NextResponse.json({
-//                             success: true,
-//                             message: "Vendor rejected successfully",
-//                      });
-//               }
-
-//               return NextResponse.json(
-//                      {
-//                             success: false,
-//                             message: "Invalid status",
-//                      },
-//                      { status: 400 }
-//               );
-//        } catch (error) {
-//               console.error("Vendor approval error:", error);
-
-//               return NextResponse.json(
-//                      {
-//                             success: false,
-//                             message: "Internal Server Error",
-//                      },
-//                      { status: 500 }
-//               );
-//        }
-// }
-
-
-
-
 import { auth } from "@/auth";
 import connectDb from "@/lib/connectDb";
 import eventHandler from "@/lib/eventHandlor";
 import User from "@/model/user";
 import { NextResponse } from "next/server";
+
 export async function POST(req) {
-       try {
-              await connectDb();
+  try {
+    await connectDb();
 
-              // admin check
-              const session = await auth();
+    const session = await auth();
 
-              const admin = await User.findOne({ email: session?.user?.email });
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized",
+        },
+        { status: 401 },
+      );
+    }
 
-              if (!admin || admin.userRole !== "admin") {
-                     return NextResponse.json(
-                            {
-                                   success: false,
-                                   message: "Unauthorized: Admin access only",
-                            },
-                            { status: 403 }
-                     );
-              }
+    const admin = await User.findOne({
+      email: session.user.email,
+    });
 
-              // request body
-              const { vendorId, status, rejectionReason } = await req.json();
+    if (!admin || admin.userRole !== "admin") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Unauthorized: Admin access only",
+        },
+        { status: 403 },
+      );
+    }
 
-              if (!vendorId || !status) {
-                     return NextResponse.json(
-                            {
-                                   success: false,
-                                   message: "vendorId and status required",
-                            },
-                            { status: 400 }
-                     );
-              }
+    // Request Body
+    const { vendorId, status, rejectionReason } = await req.json();
 
-              // 🔥 find vendor
-              const vendor = await User.findById(vendorId);
+    if (!vendorId || !status) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "vendorId and status are required",
+        },
+        { status: 400 },
+      );
+    }
 
-              if (!vendor) {
-                     return NextResponse.json(
-                            {
-                                   success: false,
-                                   message: "Vendor not found",
-                            },
-                            { status: 404 }
-                     );
-              }
+    // Find Vendor
+    const vendor = await User.findById(vendorId);
 
-              // 🔥 APPROVE
-              // updateVendorStatus API
+    if (!vendor) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Vendor not found",
+        },
+        { status: 404 },
+      );
+    }
 
-              if (status === "approved") {
-                     vendor.approvalStatus = "approved";
-                     vendor.requestApprovedAt = new Date();
-                     vendor.rejectionReason = null;
+    // Approve Vendor
+    if (status === "approved") {
+      vendor.approvalStatus = "approved";
+      vendor.requestApprovedAt = new Date();
+      vendor.rejectionReason = null;
 
-                     await vendor.save();
+      await vendor.save();
+    }
 
-                     // Latest Pending Vendors
-                     const pendingVendors = await User.find({
-                            userRole: "vendor",
-                            approvalStatus: "pending",
-                     }).sort({ createdAt: -1 }).lean();
+    // Reject Vendor
+    else if (status === "rejected") {
+      vendor.approvalStatus = "rejected";
+      vendor.requestApprovedAt = new Date();
+      vendor.rejectionReason = rejectionReason?.trim() || "Not specified";
 
-                     await eventHandler(
-                            "new-approvel-for-notification",
-                            pendingVendors
-                     );
+      await vendor.save();
+    }
 
-                     return NextResponse.json({
-                            success: true,
-                            message: "Vendor approved successfully",
-                     });
-              }
+    // Invalid Status
+    else {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid status",
+        },
+        { status: 400 },
+      );
+    }
 
-              // 🔥 REJECT
-              if (status === "rejected") {
-                     vendor.approvalStatus = "rejected";
-                     vendor.rejectionReason = rejectionReason || "Not specified";
-                     vendor.requestApprovedAt = new Date();
+    // Send Updated Pending Vendors via Socket
+    const pendingVendors = await User.find({
+      userRole: "vendor",
+      approvalStatus: "pending",
+    })
+      .sort({ createdAt: -1 })
+      .lean();
 
-                     await vendor.save();
+    await eventHandler("new-approvel-for-notification", pendingVendors);
 
-                     const pendingVendors = await User.find({
-                            userRole: "vendor",
-                            approvalStatus: "pending",
-                     }).sort({ createdAt: -1 }).lean();
+    return NextResponse.json({
+      success: true,
+      message:
+        status === "approved"
+          ? "Vendor approved successfully"
+          : "Vendor rejected successfully",
+    });
+  } catch (error) {
+    console.error("Vendor approval error:", error);
 
-                     await eventHandler(
-                            "new-approvel-for-notification",
-                            pendingVendors
-                     );
-
-                     return NextResponse.json({
-                            success: true,
-                            message: "Vendor rejected successfully",
-                     });
-              }
-
-              return NextResponse.json(
-                     {
-                            success: false,
-                            message: "Invalid status",
-                     },
-                     { status: 400 }
-              );
-       } catch (error) {
-              console.error("Vendor approval error:", error);
-
-              return NextResponse.json(
-                     {
-                            success: false,
-                            message: "Internal Server Error",
-                     },
-                     { status: 500 }
-              );
-       }
+    return NextResponse.json(
+      {
+        success: false,
+        message: "Internal Server Error",
+      },
+      { status: 500 },
+    );
+  }
 }
