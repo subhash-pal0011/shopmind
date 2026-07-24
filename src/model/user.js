@@ -44,6 +44,7 @@ const userSchema = new mongoose.Schema(
 
               phone: String,
               image: String,
+              profileImage:String,
 
               // Vendor Details (only for vendor)
               shopName: {
