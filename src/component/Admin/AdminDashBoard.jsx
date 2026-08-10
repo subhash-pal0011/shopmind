@@ -18,6 +18,7 @@ import ProductRequests from "./ProductRequests";
 const AdminDashBoard = () => {
 
   const [active, setActive] = useState(1);
+  console.log(active, "active");
   const [sideBarShow, setSideBarShow] = useState(false);
 
   const bar = [
