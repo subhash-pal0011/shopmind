@@ -63,7 +63,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-r from-blue-950 via-sky-900 to-cyan-500 flex items-center justify-center px-4 py-10 ">
+    <div className="min-h-screen bg-linear-to-r from-blue-950 via-sky-900 to-cyan-500 flex items-center justify-center">
 
       <AnimatePresence>
 
@@ -88,7 +88,7 @@ export default function RegisterPage() {
             {/* inset-0 MTLB child pura parent ko cover kar dega CHILD IMG HII PERENT ISKE UPER VALA DIV. */}
             <div className="absolute inset-0 opacity-60">
               <Image
-                src="/butterfly.avif"
+                src="/butterfly.gif"
                 alt="bg"
                 fill
                 sizes="50vw"
@@ -146,7 +146,7 @@ export default function RegisterPage() {
 
             <>
               {/* RIGHT SIDE */}
-              <div className="p-8 md:p-5 space-y-5">
+              <div className="p-8 md:p-5 space-y-">
                 <button onClick={() => setShow(!show)} className="md:right-20 right-10 absolute border h-10 w-20 rounded-sm border-gray-600 p-2 bg-blue-500 text-white cursor-pointer">{show ? "Login" : "Sign Up"}</button>
 
                 <h2 className="text-4xl font-bold text-gray-800 mt-10 ">
