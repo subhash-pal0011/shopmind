@@ -31,6 +31,7 @@ import {
   Info,
 } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
 
 /* =========================================================
    CONSTANTS
@@ -477,39 +478,77 @@ const Page = () => {
     try {
       setSuccess(false);
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // ================================
+      // CREATE FORMDATA
+      // ================================
+      const formData = new FormData();
+
+      // Product Title
+      formData.append("ProductTitle", data.ProductTitle?.trim() || "");
+
+      // Price
+      formData.append("Price", String(Number(data.Price)));
+
+      // Stock
+      formData.append("StockQuantity", String(Number(data.StockQuantity)));
+
+      // ================================
+      // CATEGORY
+      // ================================
 
       const finalCategory = data.Category === "Other" ? data.CustomCategory?.trim() : data.Category;
         
+      formData.append("Category", finalCategory || "");
 
-      const productData = {
-        ProductTitle: data.ProductTitle.trim(),
-        Price: Number(data.Price),
-        StockQuantity: Number(data.StockQuantity),
-        Category: finalCategory,
-        Size: data.Size || "",
-        Description: data.Description.trim(),
-        ReplaceDay: data.ReplaceDay ? Number(data.ReplaceDay) : 0,
-        Warranty: data.Warranty?.trim() || "",
+      // ================================
+      // SIZE
+      // ================================
 
-        Point1: data.Point1?.trim() || "",
-        Point2: data.Point2?.trim() || "",
-        Point3: data.Point3?.trim() || "",
-        Point4: data.Point4?.trim() || "",
-        Point5: data.Point5?.trim() || "",
+      formData.append("Size", data.Size || "");
 
-        images: images.map((image) => image.file),
-      };
+      // ================================
+      // DESCRIPTION
+      // ================================
 
-      console.log("PRODUCT DATA:", productData);
+      formData.append("Description", data.Description?.trim() || "");
 
-      setSuccess(true);
+      formData.append("ReplaceDay", String(Number(data.ReplaceDay || 0)));
 
-      setTimeout(() => {
-        setSuccess(false);
-      }, 4000);
+      formData.append("Warranty", data.Warranty?.trim() || "");
+
+      for (let i = 1; i <= 5; i++) {
+        const point = data[`Point${i}`]?.trim();
+
+        if (point) {
+          formData.append(`Point${i}`, point);
+        }
+      }
+
+      images.forEach((image) => {
+        if (image.file) {
+          formData.append("images", image.file);
+        }
+      });
+
+      console.log("Sending product data...");
+
+      const response = await axios.post("/api/vendor/addProduct", formData);
+
+      console.log("API RESPONSE:", response.data);
+
+      if (response.data?.success) {
+        toast.success(response.data.message || "Product added successfully");
+        setSuccess(true);
+        resetForm();
+        return;
+      }
+
+      toast.error(response.data?.message || "Failed to add product");
     } catch (error) {
       console.error("PRODUCT SUBMIT ERROR:", error);
+
+      const message = error.response?.data?.message || "Something went wrong";
+      toast.error(message);
     }
   };
 
@@ -532,7 +571,6 @@ const Page = () => {
   /* =========================================================
      LIVE CATEGORY
   ========================================================== */
-
   const selectedCategory = categories.find((item) => item.value === category);
 
   const displayCategory = category === "Other" ? customCategory || "Custom Category" : selectedCategory?.label || "Category";
@@ -611,7 +649,6 @@ const Page = () => {
         className="pointer-events-none fixed left-1/2 top-1/3 h-64 w-64 -translate-x-1/2 rounded-full bg-cyan-200/20 blur-3xl"
       />
 
-
       {/* =====================================================
           PAGE
       ====================================================== */}
@@ -635,7 +672,6 @@ const Page = () => {
         ==================================================== */}
         <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
-
             <motion.button
               type="button"
               onClick={() => window.history.back()}
@@ -2096,7 +2132,6 @@ const Page = () => {
             Your product information is securely handled
           </div>
         </div>
-
       </motion.div>
     </main>
   );
