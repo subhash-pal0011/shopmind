@@ -33,7 +33,7 @@ const Footer = ({ user }) => {
                      className="text-black/60 border-t">
                      <div className="max-w-7xl mx-auto px-6 py-10">
                             <div className="grid md:grid-cols-3 gap-8">
-
+ 
                                    {/* Brand */}
                                    <div>
                                           <h2 className="text-2xl font-bold text-black">
@@ -110,5 +110,4 @@ const Footer = ({ user }) => {
               </footer>
        );
 };
-
 export default Footer;
