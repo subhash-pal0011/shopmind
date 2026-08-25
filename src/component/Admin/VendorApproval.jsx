@@ -31,7 +31,7 @@ const VendorApproval = () => {
   // GET-VENDORS
   const getVendors = async () => {
     try {
-      const res = await axios.get("/api/vendor/allVendorUser");
+      const res = await axios.get("/api/admin/allVendorUser");
       if (res.data.success) {
         setAllVendorUserData(res.data.data);
       }
