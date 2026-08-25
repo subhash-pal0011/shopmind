@@ -1,18 +1,23 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice } from "@reduxjs/toolkit";
 
-export const allVendorUserSLice = createSlice({
-       name: 'userVender',
-       initialState: {
-              vendorUserData:[]
-       },
-       reducers: {
-              
-              setVendorUserData: (state, action) => {
-                     state.vendorUserData = action.payload
-              },
-       },
-})
+export const allVendorUserSlice = createSlice({
+  name: "vendorUser",
 
-export const { setVendorUserData } = allVendorUserSLice.actions
+  initialState: {
+    vendorUserData: [],
+    allVendorProduct: [],
+  },
 
-export default allVendorUserSLice.reducer
+  reducers: {
+    setVendorUserData: (state, action) => {
+      state.vendorUserData = action.payload;
+    },
+
+    setAllVendorProduct: (state, action) => {
+      state.allVendorProduct = action.payload;
+    },
+  },
+});
+
+export const {setVendorUserData, setAllVendorProduct} = allVendorUserSlice.actions;
+export default allVendorUserSlice.reducer;
