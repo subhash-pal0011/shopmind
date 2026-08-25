@@ -4,8 +4,6 @@ import connectDb from "@/lib/connectDb";
 import Product from "@/model/product";
 import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
-
 export async function POST(request) {
   try {
     await connectDb();
@@ -26,41 +24,51 @@ export async function POST(request) {
       );
     }
 
-    if (
-      !process.env.CLOUDINARY_CLOUD_NAME ||
-      !process.env.CLOUDINARY_API_KEY ||
-      !process.env.CLOUDINARY_API_SECRET
-    ) {
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET){
       console.error("Cloudinary environment variables are missing");
-
       return NextResponse.json(
-        { success: false, message: "Cloudinary configuration is missing" },
+        {success: false, message: "Cloudinary configuration is missing"},
         { status: 500 },
       );
     }
 
     const formData = await request.formData();
 
-    const ProductTitle = formData.get("ProductTitle")?.toString().trim() || "";
+    const ProductTitle =
+      formData.get("ProductTitle")?.toString().trim() || "";
 
     const Price = Number(formData.get("Price"));
 
     const StockQuantity = Number(formData.get("StockQuantity"));
 
-    const Category = formData.get("Category")?.toString().trim() || "";
+    const Category =
+      formData.get("Category")?.toString().trim() || "";
 
-    const Size = formData.get("Size")?.toString().trim() || "";
+    const Size =
+      formData.get("Size")?.toString().trim() || "";
 
-    const Description = formData.get("Description")?.toString().trim() || "";
+    const Description =
+      formData.get("Description")?.toString().trim() || "";
 
-    const ReplaceDay = Number(formData.get("ReplaceDay") || 0);
+    const ReplaceDay =
+      Number(formData.get("ReplaceDay") || 0);
 
-    const Warranty = formData.get("Warranty")?.toString().trim() || "";
+    const Warranty =
+      formData.get("Warranty")?.toString().trim() || "";
+
+    const freeDelivery =
+      formData.get("freeDelivery")?.toString() === "true";
+
+    const payOnDelivery =
+      formData.get("payOnDelivery")?.toString() === "true";
 
     const detailsPoint = [];
 
     for (let i = 1; i <= 5; i++) {
-      const point = formData.get(`Point${i}`)?.toString().trim();
+      const point = formData
+        .get(`Point${i}`)
+        ?.toString()
+        .trim();
       if (point) {
         detailsPoint.push(point);
       }
@@ -68,30 +76,21 @@ export async function POST(request) {
 
     if (ProductTitle.length < 3 || ProductTitle.length > 100) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Product title must be between 3 and 100 characters",
-        },
+        {success: false, message:"Product title must be between 3 and 100 characters"},
         { status: 400 },
       );
     }
 
     if (!Number.isFinite(Price) || Price < 1) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Product price must be at least 1",
-        },
+        {success: false, message: "Product price must be at least 1"},
         { status: 400 },
       );
     }
 
     if (!Number.isFinite(StockQuantity) || StockQuantity < 0) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid stock quantity",
-        },
+        {success: false, message: "Invalid stock quantity"},
         { status: 400 },
       );
     }
@@ -106,11 +105,12 @@ export async function POST(request) {
       );
     }
 
-    if (!Description || Description.length < 10 || Description.length > 1000) {
+    if (!Description || Description.length < 10 || Description.length > 1000){
       return NextResponse.json(
         {
           success: false,
-          message: "Description must be between 10 and 1000 characters",
+          message:
+            "Description must be between 10 and 1000 characters",
         },
         { status: 400 },
       );
@@ -138,7 +138,10 @@ export async function POST(request) {
 
     if ((Category === "Clothing" || Category === "Shoes") && !Size) {
       return NextResponse.json(
-        { success: false, message: "Size is required for clothing and shoes" },
+        {
+          success: false,
+          message: "Size is required for clothing and shoes",
+        },
         { status: 400 },
       );
     }
@@ -155,14 +158,20 @@ export async function POST(request) {
 
     if (imageFiles.length === 0) {
       return NextResponse.json(
-        { success: false, message: "At least one product image is required" },
+        {
+          success: false,
+          message: "At least one product image is required",
+        },
         { status: 400 },
       );
     }
 
     if (imageFiles.length > 4) {
       return NextResponse.json(
-        { success: false, message: "Maximum 4 images are allowed" },
+        {
+          success: false,
+          message: "Maximum 4 images are allowed",
+        },
         { status: 400 },
       );
     }
@@ -200,11 +209,14 @@ export async function POST(request) {
 
         uploadedImages.push(uploadedImage.secure_url);
       } catch (cloudinaryError) {
-        console.error("CLOUDINARY UPLOAD ERROR:", cloudinaryError);
+        console.error(
+          "CLOUDINARY UPLOAD ERROR:",
+          cloudinaryError,
+        );
 
         return NextResponse.json(
           {success: false, message:"Image upload failed. Please check Cloudinary configuration.",
-            error:process.env.NODE_ENV === "development"? cloudinaryError?.message: undefined,
+            error:process.env.NODE_ENV === "development" ? cloudinaryError?.message : undefined,
           },
           { status: 502 },
         );
@@ -234,6 +246,10 @@ export async function POST(request) {
 
       warranty: Warranty,
 
+      freeDelivery: freeDelivery,
+
+      payOnDelivery: payOnDelivery,
+
       detailsPoint,
 
       verificationStatus: "pending",
@@ -246,7 +262,8 @@ export async function POST(request) {
     return NextResponse.json(
       {
         success: true,
-        message: "Product added successfully and sent for verification",
+        message:
+          "Product added successfully and sent for verification",
         productId: product._id,
       },
       { status: 201 },
@@ -255,7 +272,14 @@ export async function POST(request) {
     console.error("ADD PRODUCT ERROR:", error);
 
     return NextResponse.json(
-      {success: false, message: "Failed to add product", error:process.env.NODE_ENV === "development" ? error?.message : undefined},
+      {
+        success: false,
+        message: "Failed to add product",
+        error:
+          process.env.NODE_ENV === "development"
+            ? error?.message
+            : undefined,
+      },
       { status: 500 },
     );
   }
