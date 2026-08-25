@@ -283,7 +283,10 @@ const Page = () => {
   const [highlights, setHighlights] = useState([1]);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [showPreview, setShowPreview] = useState(true);
-
+  const [freeDelivery, setFreeDelivery] = useState(false);
+  console.log("freeDelivery :", freeDelivery);
+  const [payOnDelivery, setPayOnDelivery] = useState(false);
+  console.log("payOnDelivery :", payOnDelivery);
   const fileInputRef = useRef(null);
 
   /* =========================================================
@@ -475,82 +478,77 @@ const Page = () => {
      FORM DATA
   ========================================================== */
   const onSubmit = async (data) => {
-    try {
-      setSuccess(false);
+  try {
+    setSuccess(false);
 
-      // ================================
-      // CREATE FORMDATA
-      // ================================
-      const formData = new FormData();
+    const selectedImages =
+      images?.filter((image) => image?.file instanceof File) || [];
 
-      // Product Title
-      formData.append("ProductTitle", data.ProductTitle?.trim() || "");
-
-      // Price
-      formData.append("Price", String(Number(data.Price)));
-
-      // Stock
-      formData.append("StockQuantity", String(Number(data.StockQuantity)));
-
-      // ================================
-      // CATEGORY
-      // ================================
-
-      const finalCategory = data.Category === "Other" ? data.CustomCategory?.trim() : data.Category;
-        
-      formData.append("Category", finalCategory || "");
-
-      // ================================
-      // SIZE
-      // ================================
-
-      formData.append("Size", data.Size || "");
-
-      // ================================
-      // DESCRIPTION
-      // ================================
-
-      formData.append("Description", data.Description?.trim() || "");
-
-      formData.append("ReplaceDay", String(Number(data.ReplaceDay || 0)));
-
-      formData.append("Warranty", data.Warranty?.trim() || "");
-
-      for (let i = 1; i <= 5; i++) {
-        const point = data[`Point${i}`]?.trim();
-
-        if (point) {
-          formData.append(`Point${i}`, point);
-        }
-      }
-
-      images.forEach((image) => {
-        if (image.file) {
-          formData.append("images", image.file);
-        }
-      });
-
-      console.log("Sending product data...");
-
-      const response = await axios.post("/api/vendor/addProduct", formData);
-
-      console.log("API RESPONSE:", response.data);
-
-      if (response.data?.success) {
-        toast.success(response.data.message || "Product added successfully");
-        setSuccess(true);
-        resetForm();
-        return;
-      }
-
-      toast.error(response.data?.message || "Failed to add product");
-    } catch (error) {
-      console.error("PRODUCT SUBMIT ERROR:", error);
-
-      const message = error.response?.data?.message || "Something went wrong";
-      toast.error(message);
+    if (selectedImages.length === 0) {
+      toast.error("At least one product image is required");
+      return;
     }
-  };
+
+    if (selectedImages.length > 4) {
+      toast.error("Maximum 4 product images are allowed");
+      return;
+    }
+
+    const formData = new FormData();
+
+    formData.append("ProductTitle", data.ProductTitle?.trim() || "")
+      
+    // IMPORTANT: Boolean -> String
+    formData.append("freeDelivery", freeDelivery ? "true" : "false")
+
+    formData.append("payOnDelivery", payOnDelivery ? "true" : "false")
+      
+    formData.append("Price", String(Number(data.Price) || 0));
+
+    formData.append("StockQuantity", String(Number(data.StockQuantity) || 0));
+
+    const finalCategory = data.Category === "Other" ? data.CustomCategory?.trim(): data.Category;
+
+    formData.append("Category", finalCategory || "")
+
+    formData.append("Size", data.Size?.trim() || "");
+      
+    formData.append("Description", data.Description?.trim() || "");
+
+    formData.append("ReplaceDay", String(Number(data.ReplaceDay) || 0)); 
+
+    formData.append("Warranty", data.Warranty?.trim() || "");
+
+    for (let i = 1; i <= 5; i++) {
+      const point = data[`Point${i}`]?.trim();
+      if (point) {
+        formData.append(`Point${i}`, point);
+      }
+    }
+
+    selectedImages.forEach((image) => {
+      formData.append("images", image.file);
+    });
+
+    for (const [key, value] of formData.entries()) {
+      console.log(key, ":", value);
+    }
+
+    const response = await axios.post("/api/vendor/addProduct", formData);
+      
+    if (response.data?.success) {
+      toast.success(response.data.message || "Product added successfully");
+      setSuccess(true);
+      resetForm(true)
+      return;
+    }
+    toast.error(response.data?.message || "Failed to add product");
+  } catch (error) {
+    console.error("PRODUCT SUBMIT ERROR:", error);
+    const message = error.response?.data?.message || "Something went wrong";
+    toast.error(message);
+  }
+};
 
   /* =========================================================
      RESET
@@ -559,13 +557,11 @@ const Page = () => {
     images.forEach((image) => {
       if (image.preview) URL.revokeObjectURL(image.preview);
     });
-
     reset();
     setImages([]);
     setHighlights([1]);
     setSuccess(false);
     setActiveSection("basic");
-    toast.info("Form has been reset.", "info");
   };
 
   /* =========================================================
@@ -573,8 +569,10 @@ const Page = () => {
   ========================================================== */
   const selectedCategory = categories.find((item) => item.value === category);
 
-  const displayCategory = category === "Other" ? customCategory || "Custom Category" : selectedCategory?.label || "Category";
-    
+  const displayCategory =
+    category === "Other"
+      ? customCategory || "Custom Category"
+      : selectedCategory?.label || "Category";
 
   /* =========================================================
      SECTIONS
@@ -930,7 +928,6 @@ const Page = () => {
               {/* =================================================
                   BASIC INFORMATION
               ================================================== */}
-
               <motion.section
                 id="basic"
                 onViewportEnter={() => setActiveSection("basic")}
@@ -1000,7 +997,6 @@ const Page = () => {
                   />
 
                   {/* CATEGORY */}
-
                   <motion.div
                     animate={
                       errors.Category
@@ -1054,7 +1050,6 @@ const Page = () => {
                 </div>
 
                 {/* CATEGORY CHIP */}
-
                 <AnimatePresence mode="wait">
                   {selectedCategory && (
                     <motion.div
@@ -1104,7 +1099,6 @@ const Page = () => {
                 </AnimatePresence>
 
                 {/* CUSTOM CATEGORY */}
-
                 <AnimatePresence>
                   {category === "Other" && (
                     <motion.div
@@ -1161,7 +1155,6 @@ const Page = () => {
                 </AnimatePresence>
 
                 {/* SIZE */}
-
                 <AnimatePresence>
                   {(category === "Clothing" || category === "Shoes") && (
                     <motion.div
@@ -1264,7 +1257,6 @@ const Page = () => {
               {/* =================================================
                   DESCRIPTION
               ================================================== */}
-
               <motion.section
                 id="description"
                 onViewportEnter={() => setActiveSection("description")}
@@ -1322,7 +1314,6 @@ const Page = () => {
               {/* =================================================
                   WARRANTY
               ================================================== */}
-
               <section className="mt-10 border-t border-slate-100 pt-8">
                 <SectionHeader
                   icon={ShieldCheck}
@@ -1365,10 +1356,199 @@ const Page = () => {
                 </div>
               </section>
 
+              {/* CHECK-BOX */}
+              <motion.section
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className="relative flex mt-5 gap-5 flex-wrap"
+              >
+                {/* ================= FREE DELIVERY ================= */}
+                <label
+                  className={`group relative flex items-center gap-3 cursor-pointer select-none
+                  rounded-xl border px-4 py-2 transition-all duration-300 w-52 min-h-15
+                  ${
+                    freeDelivery
+                      ? "border-green-500 bg-green-50 shadow-md shadow-green-100"
+                      : "border-gray-200 bg-white hover:border-green-300"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={freeDelivery}
+                    onChange={() => setFreeDelivery((prev) => !prev)}
+                    className="sr-only"
+                  />
+
+                  {/* Animated Checkbox */}
+                  <motion.div
+                    animate={{
+                      scale: freeDelivery ? 1 : 0.9,
+                      rotate: freeDelivery ? 0 : -5,
+                      backgroundColor: freeDelivery ? "#22c55e" : "#ffffff",
+                      borderColor: freeDelivery ? "#22c55e" : "#d1d5db",
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 15,
+                    }}
+                    className="w-6 h-6 shrink-0 rounded-lg border-2 flex items-center justify-center"
+                  >
+                    <motion.svg
+                      initial={false}
+                      animate={{
+                        pathLength: freeDelivery ? 1 : 0,
+                        opacity: freeDelivery ? 1 : 0,
+                      }}
+                      transition={{ duration: 0.25 }}
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <motion.path d="M5 12l4 4L19 7" />
+                    </motion.svg>
+                  </motion.div>
+
+                  {/* Floating Label */}
+                  <div className="relative flex-1 h-full flex items-center">
+                    <motion.span
+                      animate={{
+                        y: freeDelivery ? -18 : 0,
+                        scale: freeDelivery ? 0.82 : 1,
+                        color: freeDelivery ? "#16a34a" : "#6b7280",
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 350,
+                        damping: 20,
+                      }}
+                      className="absolute left-0 top-1/2 -translate-y-1/2 origin-left pointer-events-none font-semibold whitespace-nowrap"
+                    >
+                      Free Delivery
+                    </motion.span>
+
+                    {/* Subtext */}
+                    <motion.p
+                      initial={false}
+                      animate={{
+                        opacity: freeDelivery ? 1 : 0,
+                        y: freeDelivery ? 5 : 12,
+                      }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute left-0 flex items-center text-[11px] text-blue-600 whitespace-nowrap pointer-events-none"
+                    >
+                      <span>Free delivery enabled</span>
+                      <img
+                        src="/Delivery.gif"
+                        alt="Free delivery"
+                        className=" w-10 object-contain"
+                      />
+                    </motion.p>
+                  </div>
+                </label>
+
+                {/* ================= PAY ON DELIVERY ================= */}
+                <label
+                  className={`group relative flex items-center gap-3 cursor-pointer select-none
+                  rounded-xl border px-4 py-4 transition-all duration-300 w-52
+                  ${
+                    payOnDelivery
+                      ? "border-blue-500 bg-blue-50 shadow-md shadow-blue-100"
+                      : "border-gray-200 bg-white hover:border-blue-300"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={payOnDelivery}
+                    onChange={() => setPayOnDelivery((prev) => !prev)}
+                    className="sr-only"
+                  />
+
+                  {/* Animated Checkbox */}
+                  <motion.div
+                    animate={{
+                      scale: payOnDelivery ? 1 : 0.9,
+                      rotate: payOnDelivery ? 0 : -5,
+                      backgroundColor: payOnDelivery ? "#3b82f6" : "#ffffff",
+                      borderColor: payOnDelivery ? "#3b82f6" : "#d1d5db",
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 15,
+                    }}
+                    className="w-6 h-6 shrink-0 rounded-lg border-2 flex items-center justify-center"
+                  >
+                    <motion.svg
+                      initial={false}
+                      animate={{
+                        pathLength: payOnDelivery ? 1 : 0,
+                        opacity: payOnDelivery ? 1 : 0,
+                      }}
+                      transition={{ duration: 0.25 }}
+                      width="15"
+                      height="15"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="white"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <motion.path d="M5 12l4 4L19 7" />
+                    </motion.svg>
+                  </motion.div>
+
+                  {/* Floating Label */}
+                  <div className="relative flex-1 h-full flex items-center">
+                    <motion.span
+                      animate={{
+                        y: payOnDelivery ? -18 : 0,
+                        scale: payOnDelivery ? 0.82 : 1,
+                        color: payOnDelivery ? "#2563eb" : "#6b7280",
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 350,
+                        damping: 20,
+                      }}
+                      className="absolute left-0 top-1/2 -translate-y-1/2
+                      origin-left pointer-events-none font-semibold whitespace-nowrap"
+                    >
+                      Pay on Delivery
+                    </motion.span>
+
+                    {/* Subtext */}
+                    <motion.p
+                      initial={false}
+                      animate={{
+                        opacity: payOnDelivery ? 1 : 0,
+                        y: payOnDelivery ? 5 : 12,
+                      }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute left-0 flex items-center gap-1 text-[11px] text-green-600 whitespace-nowrap pointer-events-none"
+                    >
+                      <span>Cash on delivery</span>
+
+                      <img
+                        src="/Money.gif"
+                        alt="Money"
+                        className="h-5 w-5 object-contain"
+                      />
+                    </motion.p>
+                  </div>
+                </label>
+              </motion.section>
+
               {/* =================================================
                   IMAGES
               ================================================== */}
-
               <motion.section
                 id="images"
                 onViewportEnter={() => setActiveSection("images")}
@@ -1536,7 +1716,6 @@ const Page = () => {
               {/* =================================================
                   HIGHLIGHTS
               ================================================== */}
-
               <motion.section
                 id="highlights"
                 onViewportEnter={() => setActiveSection("highlights")}
@@ -1705,7 +1884,6 @@ const Page = () => {
               </div>
 
               {/* SUCCESS */}
-
               <AnimatePresence>
                 {success && (
                   <motion.div
