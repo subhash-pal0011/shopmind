@@ -72,8 +72,145 @@
   }
 }
 
+/* FOR BLUE BOARDER ROUNDED */
+.running-border-2 {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 
+  padding: 4px 12px;
+  border-radius: 10px;
+  overflow: hidden;
 
+  /* Static green border */
+  border: 1px solid rgb(112, 112, 219);
+
+  background: bg-blue-50;
+}
+/* Moving light */
+.running-border-2::before {
+  content: "";
+
+  position: absolute;
+
+  width: 100px;
+  height: 2px;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(37, 99, 235, 0.5),
+    #2563eb,
+    #2563eb,
+    #2563eb,
+    rgba(37, 99, 235, 0.5),
+    transparent
+  );
+
+  /* box-shadow:
+    0 0 4px #22c55e,
+    0 0 8px rgba(34, 197, 94, 0.8),
+    0 0 14px rgba(34, 197, 94, 0.35); */
+
+  z-index: 2;
+
+  /*
+    Border ke exact path par move karega
+  */
+  offset-path: inset(1px round 7px);
+
+  offset-distance: 0%;
+
+  animation: greenBorderRun 1.5s linear infinite;
+}
+/* Content above light */
+.running-border-2 > * {
+  position: relative;
+  z-index: 3;
+}
+/* SMOOTH BORDER ANIMATION */
+@keyframes greenBorderRun {
+  0% {
+    offset-distance: 0%;
+  }
+
+  100% {
+    offset-distance: 100%;
+  }
+}
+
+/* FOR GREEN BOARDER ROUNDED */
+.running-border-3 {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 4px 12px;
+  border-radius: 10px;
+  overflow: hidden;
+
+  /* Static green border */
+  border: 1px solid rgb(3, 53, 22);
+
+  background: bg-green-50;
+}
+/* Moving light */
+.running-border-3::before {
+  content: "";
+
+  position: absolute;
+
+  width: 100px;
+  height: 2px;
+
+  border-radius: 999px;
+
+  background: linear-gradient(
+  90deg,
+  transparent,
+  rgba(34, 197, 94, 0.5),
+  #22c55e,
+  #22c55e,
+  #22c55e,
+  rgba(34, 197, 94, 0.5),
+  transparent
+);
+
+  /* box-shadow:
+    0 0 4px #22c55e,
+    0 0 8px rgba(34, 197, 94, 0.8),
+    0 0 14px rgba(34, 197, 94, 0.35); */
+
+  z-index: 2;
+
+  /*
+    Border ke exact path par move karega
+  */
+  offset-path: inset(1px round 7px);
+
+  offset-distance: 0%;
+
+  animation: greenBorderRun 1.5s linear infinite;
+}
+/* Content above light */
+.running-border-3 > * {
+  position: relative;
+  z-index: 3;
+}
+/* SMOOTH BORDER ANIMATION */
+@keyframes greenBorderRun {
+  0% {
+    offset-distance: 0%;
+  }
+
+  100% {
+    offset-distance: 100%;
+  }
+}
 
 @custom-variant dark (&:is(.dark *));
 
