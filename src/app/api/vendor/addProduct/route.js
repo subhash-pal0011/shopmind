@@ -1,8 +1,10 @@
 import { auth } from "@/auth";
 import cloudinary from "@/lib/cloudinary";
 import connectDb from "@/lib/connectDb";
+import eventHandler from "@/lib/eventHandlor";
 import Product from "@/model/product";
 import { NextResponse } from "next/server";
+
 
 export async function POST(request) {
   try {
@@ -259,28 +261,24 @@ export async function POST(request) {
       requestAt: new Date(),
     });
 
+    // REAL TIME
+    eventHandler("product:created", product)
+
     return NextResponse.json(
       {
         success: true,
-        message:
-          "Product added successfully and sent for verification",
-        productId: product._id,
+        message:"Product added successfully and sent for verification",
       },
       { status: 201 },
     );
   } catch (error) {
     console.error("ADD PRODUCT ERROR:", error);
-
     return NextResponse.json(
-      {
-        success: false,
-        message: "Failed to add product",
-        error:
-          process.env.NODE_ENV === "development"
-            ? error?.message
-            : undefined,
+      {success: false, message: "Failed to add product",
+       error:process.env.NODE_ENV === "development" ? error?.message : undefined,
       },
       { status: 500 },
     );
   }
 }
+
