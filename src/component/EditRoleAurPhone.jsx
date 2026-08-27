@@ -27,8 +27,6 @@ const EditRoleAurPhone = () => {
                      role: selectedRole,
               };
 
-              console.log(formData);
-
               try {
                      const res = await axios.post("/api/user/phoneEditRole" , formData);
                      if(res.data.success){
