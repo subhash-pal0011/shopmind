@@ -28,7 +28,6 @@ import {
   Zap,
   ShoppingBag,
   Layers3,
-  Info,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
@@ -244,7 +243,6 @@ const Page = () => {
     watch,
     reset,
     setValue,
-    trigger,
     formState: { errors, isSubmitting },
   } = useForm({
     mode: "onChange",
@@ -280,13 +278,12 @@ const Page = () => {
   const [dragActive, setDragActive] = useState(false);
   const [success, setSuccess] = useState(false);
   const [activeSection, setActiveSection] = useState("basic");
+  console.log("activeSection :" ,activeSection)
   const [highlights, setHighlights] = useState([1]);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [showPreview, setShowPreview] = useState(true);
   const [freeDelivery, setFreeDelivery] = useState(false);
-  console.log("freeDelivery :", freeDelivery);
   const [payOnDelivery, setPayOnDelivery] = useState(false);
-  console.log("payOnDelivery :", payOnDelivery);
   const fileInputRef = useRef(null);
 
   /* =========================================================
@@ -531,7 +528,7 @@ const Page = () => {
     });
 
     for (const [key, value] of formData.entries()) {
-      console.log(key, ":", value);
+      // console.log(key, ":", value);
     }
 
     const response = await axios.post("/api/vendor/addProduct", formData);
@@ -548,7 +545,7 @@ const Page = () => {
     const message = error.response?.data?.message || "Something went wrong";
     toast.error(message);
   }
-};
+  };
 
   /* =========================================================
      RESET
@@ -823,7 +820,6 @@ const Page = () => {
           {/* =================================================
               FORM CARD
           ================================================== */}
-
           <motion.div
             initial={{
               opacity: 0,
@@ -920,7 +916,6 @@ const Page = () => {
             </div>
 
             {/* FORM */}
-
             <form
               onSubmit={handleSubmit(onSubmit)}
               className="p-4 sm:p-6 md:p-8"
@@ -1973,6 +1968,7 @@ const Page = () => {
                 )}
               </AnimatePresence>
             </form>
+
           </motion.div>
 
           {/* =================================================
@@ -2278,6 +2274,7 @@ const Page = () => {
                 >
                   Hide preview
                 </button>
+
               </div>
             </aside>
           )}
@@ -2310,6 +2307,7 @@ const Page = () => {
             Your product information is securely handled
           </div>
         </div>
+
       </motion.div>
     </main>
   );
