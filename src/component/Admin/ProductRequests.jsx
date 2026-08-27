@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import { IoSearchOutline } from "react-icons/io5";
 import { disconnectSocket, socketConnection } from "@/lib/socketConnection";
+import { toast } from "sonner";
 
 const ProductRequests = () => {
   const [products, setProducts] = useState([]);
@@ -24,10 +25,7 @@ const ProductRequests = () => {
 
   const [filter, setFilter] = useState("pending");
 
-
-  // =====================================================
   // FETCH PRODUCT REQUESTS
-  // =====================================================
   const fetchProductRequests = async () => {
     try {
       setLoading(true);
@@ -58,7 +56,9 @@ const ProductRequests = () => {
 
       setProducts((prevProducts) => {
         // Duplicate product avoid karo
-        const alreadyExists = prevProducts.some((item) => item._id === product._id);
+        const alreadyExists = prevProducts.some(
+          (item) => item._id === product._id,
+        );
 
         if (alreadyExists) {
           return prevProducts;
@@ -78,66 +78,61 @@ const ProductRequests = () => {
     };
   }, []);
 
-
-  // =====================================================
   // APPROVE PRODUCT
-  // =====================================================
   const handleApprove = async (product) => {
+    if (!product?._id) return;
+
     try {
       setActionLoading(true);
 
-      const response = await axios.patch(
-        `/api/admin/productRequests/${product._id}`,
+      const res = await axios.put(
+        "/api/admin/rejectAndApproveProduct",
         {
-          action: "approve",
+          productId: product._id,
+          status: "approved",
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
       );
 
-      if (response.data?.success) {
-        setProducts((prev) =>
-          prev.map((item) =>
-            item._id === product._id
-              ? {
-                  ...item,
-                  verificationStatus: "approved",
-                  isActive: true,
-                  approvedAt: new Date(),
-                }
-              : item,
-          ),
+      if (res.data.success) {
+        toast.success(res.data.message);
+        setProducts((prev) => prev.map((item) => item._id === product._id ? {...item, verificationStatus: "approved", isActive: true,
+        approvedAt: res.data.product?.approvedAt,rejectedReason: null} : item),
         );
-
-        setSelectedProduct(null);
       }
     } catch (error) {
-      console.error("APPROVE PRODUCT ERROR:", error);
+      console.error("Approve Error:", error);
+      toast.error(error.response?.data?.message || "Failed to approve product");
     } finally {
       setActionLoading(false);
     }
   };
 
-  // =====================================================
   // REJECT PRODUCT
-  // =====================================================
   const handleReject = async () => {
-    if (!selectedProduct) return;
+    if (!selectedProduct?._id) return;
 
     if (!rejectReason.trim()) {
+      toast.error("Please enter rejection reason");
       return;
     }
 
     try {
       setActionLoading(true);
+      const res = await axios.put("/api/admin/rejectAndApproveProduct", {
+        productId: selectedProduct._id,
+        status: "rejected",
+        rejectedReason: rejectReason.trim(),
+      });
 
-      const response = await axios.patch(
-        `/api/admin/productRequests/${selectedProduct._id}`,
-        {
-          action: "reject",
-          rejectedReason: rejectReason.trim(),
-        },
-      );
+      if (res.data.success) {
+        toast.success(res.data.message);
 
-      if (response.data?.success) {
+        // Update product in UI
         setProducts((prev) =>
           prev.map((item) =>
             item._id === selectedProduct._id
@@ -145,18 +140,20 @@ const ProductRequests = () => {
                   ...item,
                   verificationStatus: "rejected",
                   isActive: false,
+                  approvedAt: null,
                   rejectedReason: rejectReason.trim(),
                 }
               : item,
           ),
         );
 
-        setShowRejectModal(false);
+        // Close reject modal
         setSelectedProduct(null);
         setRejectReason("");
       }
     } catch (error) {
-      console.error("REJECT PRODUCT ERROR:", error);
+      console.error("Reject Error:", error);
+      toast.error(error.response?.data?.message || "Failed to reject product");
     } finally {
       setActionLoading(false);
     }
