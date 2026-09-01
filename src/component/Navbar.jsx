@@ -16,7 +16,6 @@ import { LuLayoutGrid } from "react-icons/lu";
 import { MdOutlineShoppingBag } from "react-icons/md";
 import { RiListUnordered } from "react-icons/ri";
 import { useRouter } from "next/navigation";
-import { useSelector } from "react-redux";
 
 const Navbar = ({ user }) => {
   const [menuShow, setMenuShow] = useState(false);
@@ -162,24 +161,7 @@ const Navbar = ({ user }) => {
               {["Home", "Categories", "Shop", "Other"].map((item) => (
                 <p
                   key={item}
-                  className="
-                cursor-pointer
-                text-gray-700
-                transition-all
-                duration-300
-                ease-in-out
-                hover:text-blue-600
-                hover:-translate-y-1
-                after:absolute 
-                after:left-0
-                after:-bottom-1
-                after:h-0.5
-                after:w-0
-                after:bg-blue-600
-                after:transition-all
-                after:duration-300
-                hover:after:w-full
-                "
+                  className="cursor-pointer text-gray-700 transition-all duration-300 ease-in-out hover:text-blue-600 hover:-translate-y-1 after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-600 after:transition-all after:duration-300 hover:after:w-full"
                 >
                   {item}
                 </p>
@@ -199,7 +181,9 @@ const Navbar = ({ user }) => {
                 className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all text-gray-600 duration-200"
               />
 
-              <LuShoppingCart className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-10 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600" />
+              <button onClick={() => router.push("/addCard")}>
+                <LuShoppingCart className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-10 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600" />
+              </button>
 
               <div className="relative">
                 <LuCircleUserRound
