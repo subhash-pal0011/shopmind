@@ -73,7 +73,7 @@ const Categoreis = () => {
                             initial={{ opacity: 0, y: 50, scale: 0.95 }}
                             whileInView={{ opacity: 1, y: 0, scale: 1 }}
                             transition={{ duration: 0.6 }}
-                            className="space-y-5 relative py-">
+                            className="space-y-5 relative">
 
                             <h2 className="text-2xl md:text-xl font-bold text-center text-gray-800">
                                    Shop by Category
@@ -83,12 +83,12 @@ const Categoreis = () => {
                                    ref={scrollRef}
                                    onMouseEnter={() => setHover(true)}
                                    onMouseLeave={() => setHover(false)}
-                                   className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth"
+                                   className="flex gap-5 overflow-x-auto scrollbar-hide scroll-smooth py-2"
                             >
                                    {categories.map((item) => (
                                           <motion.div
                                                  key={item.id}
-                                                 className="min-w-45 bg-white rounded-2xl shadow-md hover:shadow-xl cursor-pointer p-4 flex flex-col items-center"
+                                                 className="min-w-45 bg-white rounded-xl shadow-md hover:shadow-xl cursor-pointer p-4 flex flex-col items-center"
                                           >
                                                  <div className="w-24 h-24 rounded-full flex items-center justify-center bg-gray-100">
                                                         <span className="text-5xl text-blue-500">
