@@ -1,4 +1,5 @@
 import connectDb from "@/lib/connectDb";
+import eventHandler from "@/lib/eventHandlor";
 import Product from "@/model/product";
 import { NextResponse } from "next/server";
 
@@ -39,7 +40,6 @@ export async function PUT(req) {
       );
     }
 
-    // APPROVE PRODUCT
     if (status === "approved") {
       product.verificationStatus = "approved";
       product.approvedAt = new Date();
@@ -51,20 +51,21 @@ export async function PUT(req) {
       product.rejectedReason = null;
     }
 
-    // REJECT PRODUCT
     if (status === "rejected") {
       product.verificationStatus = "rejected";
 
       // Rejected product should not be active
       product.isActive = false;
 
-      // No approval date
       product.approvedAt = null;
 
       product.rejectedReason = rejectedReason.trim();
     }
 
     const updatedProduct = await product.save();
+
+    eventHandler("approved-product" , updatedProduct);
+
 
     return NextResponse.json(
       {success: true, message: status === "approved" ? "Product approved successfully" : "Product rejected successfully"},
