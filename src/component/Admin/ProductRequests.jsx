@@ -77,6 +77,23 @@ const ProductRequests = () => {
       disconnectSocket();
     };
   }, []);
+  // REAL TIME DELETE PRODUCT
+  useEffect(() => {
+
+    fetchProductRequests();
+
+    const socket = socketConnection();
+
+    const handleProductDeleted = (deletedProduct) => {
+      setProducts((prevProducts) =>
+        prevProducts.filter((product) => product._id !== deletedProduct._id),
+      );
+    };
+    socket.on("deleted-product", handleProductDeleted);
+    return () => {
+      disconnectSocket();
+    };
+  }, []);
 
   // APPROVE PRODUCT
   const handleApprove = async (product) => {
@@ -100,8 +117,18 @@ const ProductRequests = () => {
 
       if (res.data.success) {
         toast.success(res.data.message);
-        setProducts((prev) => prev.map((item) => item._id === product._id ? {...item, verificationStatus: "approved", isActive: true,
-        approvedAt: res.data.product?.approvedAt,rejectedReason: null} : item),
+        setProducts((prev) =>
+          prev.map((item) =>
+            item._id === product._id
+              ? {
+                  ...item,
+                  verificationStatus: "approved",
+                  isActive: true,
+                  approvedAt: res.data.product?.approvedAt,
+                  rejectedReason: null,
+                }
+              : item,
+          ),
         );
       }
     } catch (error) {
@@ -162,7 +189,6 @@ const ProductRequests = () => {
   // =====================================================
   // FILTER
   // =====================================================
-
   const filteredProducts = products.filter((product) => {
     const matchesSearch =
       product?.title?.toLowerCase().includes(search.toLowerCase()) ||
