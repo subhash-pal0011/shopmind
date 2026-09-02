@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import { toast } from "sonner";
 
 const Page = ({ params }) => {
   const { productId } = React.use(params);
@@ -47,8 +49,8 @@ const Page = ({ params }) => {
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const isLoading =
-    !Array.isArray(allVendorProducts) ||
-    (allVendorProducts.length === 0 && product === undefined);
+  !Array.isArray(allVendorProducts) ||
+  (allVendorProducts.length === 0 && product === undefined);
 
   const formatDate = (date) => {
     if (!date) return "N/A";
@@ -157,39 +159,35 @@ const Page = ({ params }) => {
     }
   };
 
-  const handleDelete = async () => {
+  // DELETE FUNCTION API
+  const handleDelete = async (productId) => {
+    if (!productId) {
+      toast.error("Product ID is missing");
+      return;
+    }
+
     try {
       setDeleting(true);
 
-      /*
-       * ==================================================
-       * APNI DELETE API YAHA LAGAO
-       * ==================================================
-       *
-       * const res = await fetch(
-       *   `/api/vendor/product/${productId}`,
-       *   {
-       *     method: "DELETE",
-       *   }
-       * );
-       *
-       * const data = await res.json();
-       *
-       * if (!res.ok) {
-       *   throw new Error(data.message || "Delete failed");
-       * }
-       */
+      const res = await axios.delete("/api/vendor/deleteProduct", {
+        data: {
+          productId: productId,
+        },
+      });
 
-      console.log("DELETE PRODUCT:", productId);
-
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      setDeleteOpen(false);
-
-      window.location.href = "/";
+      if (res.data.success) {
+        toast.success(res.data.message);
+        window.location.href = "/";
+        setDeleteOpen(false);
+      } else {
+        toast.error(res.data.message || "Delete failed");
+      }
     } catch (error) {
       console.error("Delete error:", error);
-      alert(error.message || "Delete failed");
+
+      toast.error(
+        error.response?.data?.message || error.message || "Delete failed",
+      );
     } finally {
       setDeleting(false);
     }
@@ -336,10 +334,9 @@ const Page = ({ params }) => {
         </motion.div>
 
         {/* ================= MAIN ================= */}
-
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {/* ================= IMAGE CARD ================= */}
 
+          {/* ================= IMAGE CARD ================= */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -1294,7 +1291,6 @@ const Page = ({ params }) => {
                 </div>
               </div>
             </motion.section>
-
           </div>
         </div>
       </div>
@@ -1351,7 +1347,7 @@ const Page = ({ params }) => {
 
                   <button
                     disabled={deleting}
-                    onClick={handleDelete}
+                    onClick={() => handleDelete(product._id)}
                     className="flex-1 cursor-pointer inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-red-200 hover:bg-red-700 disabled:opacity-60"
                   >
                     {deleting ? (
@@ -1366,6 +1362,7 @@ const Page = ({ params }) => {
                       </>
                     )}
                   </button>
+
                 </div>
               </div>
             </motion.div>
