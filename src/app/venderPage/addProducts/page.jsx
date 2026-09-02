@@ -278,7 +278,6 @@ const Page = () => {
   const [dragActive, setDragActive] = useState(false);
   const [success, setSuccess] = useState(false);
   const [activeSection, setActiveSection] = useState("basic");
-  console.log("activeSection :" ,activeSection)
   const [highlights, setHighlights] = useState([1]);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [showPreview, setShowPreview] = useState(true);
