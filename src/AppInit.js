@@ -5,6 +5,7 @@ import AllVendorUser from './hooks/AllVendorUser'
 import { disconnectSocket, socketConnection } from './lib/socketConnection'
 import { useSelector } from 'react-redux'
 import GetAllVendorProduct from './hooks/GetAllVendorProduct'
+import GetProductForUser from './hooks/GetProductForUser'
 
 const AppInit = ({ children }) => {
        const userData = useSelector((state) => state.user.userData);
@@ -27,6 +28,7 @@ const AppInit = ({ children }) => {
                      <CurrentUser />
                      <AllVendorUser />
                      <GetAllVendorProduct />
+                     <GetProductForUser />
                      {children}
               </>
        )
