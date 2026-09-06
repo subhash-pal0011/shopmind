@@ -1,6 +1,5 @@
 "use client";
 import Image from "next/image";
-import { IoSearchOutline } from "react-icons/io5";
 import { FiPhoneCall } from "react-icons/fi";
 import { LuCircleUserRound, LuShoppingCart } from "react-icons/lu";
 import { HiMiniBars3 } from "react-icons/hi2";
@@ -16,6 +15,9 @@ import { LuLayoutGrid } from "react-icons/lu";
 import { MdOutlineShoppingBag } from "react-icons/md";
 import { RiListUnordered } from "react-icons/ri";
 import { useRouter } from "next/navigation";
+import { AiOutlineProduct } from "react-icons/ai";
+
+
 
 const Navbar = ({ user }) => {
   const [menuShow, setMenuShow] = useState(false);
@@ -171,10 +173,14 @@ const Navbar = ({ user }) => {
 
           {user.userRole === "user" ? (
             <div className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-8">
-              <IoSearchOutline
-                size={20}
+
+
+              <button onClick={() => router.push("/products")}>
+                <AiOutlineProduct
+                size={17}
                 className="w-5 h-5 sm:w-7 sm:h-6 md:w-7 md:h-6 lg:w-10 lg:h-6 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
               />
+              </button>
 
               <FiPhoneCall
                 size={17}
@@ -182,7 +188,7 @@ const Navbar = ({ user }) => {
               />
 
               <button onClick={() => router.push("/addCard")}>
-                <LuShoppingCart className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-10 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600" />
+                <LuShoppingCart  className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-10 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600" />
               </button>
 
               <div className="relative">
