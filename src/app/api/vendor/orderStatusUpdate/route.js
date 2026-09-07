@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import connectDb from "@/lib/connectDb";
+import eventHandler from "@/lib/eventHandlor";
 import Order from "@/model/order";
 
 export async function PUT(req) {
@@ -14,7 +15,7 @@ export async function PUT(req) {
           success: false,
           message: "Unauthorized. Please login first.",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -26,7 +27,7 @@ export async function PUT(req) {
           success: false,
           message: "orderId and status are required.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -43,10 +44,10 @@ export async function PUT(req) {
         {
           success: false,
           message: `Invalid order status. Allowed statuses: ${validStatuses.join(
-            ", "
+            ", ",
           )}`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -58,7 +59,7 @@ export async function PUT(req) {
           success: false,
           message: "Order not found.",
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -67,6 +68,12 @@ export async function PUT(req) {
 
     await order.save();
 
+    // Real-time event emit
+    eventHandler("orderStatusUpdated", {
+      orderId: order._id.toString(),
+      status: order.orderStatus,
+    });
+
     // Delivered hone par data return nahi hoga
     if (status === "delivered") {
       return Response.json(
@@ -74,7 +81,7 @@ export async function PUT(req) {
           success: true,
           message: "Order delivered successfully.",
         },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -85,8 +92,10 @@ export async function PUT(req) {
         message: "Order status updated successfully.",
         data: order,
       },
-      { status: 200 }
+      { status: 200 },
     );
+
+    eventHandler("orderStatusUpdated");
   } catch (error) {
     console.error("UPDATE ORDER STATUS ERROR:", error);
 
@@ -96,7 +105,7 @@ export async function PUT(req) {
         message: "Failed to update order status.",
         error: error?.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
