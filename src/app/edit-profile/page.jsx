@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "sonner";
 import { updateUser } from "@/redux/userSlice";
+import { useRouter } from "next/navigation";
 
 const Page = () => {
   const [showEditPage, setShowEditPage] = useState(false);
@@ -19,12 +20,13 @@ const Page = () => {
 
   const dispatch = useDispatch();
 
+  const router = useRouter();
+
   const userData = useSelector((state) => state.user.userData);
 
   // --------------------------------
   // React Hook Form
   // --------------------------------
-
   const {
     register,
     handleSubmit,
@@ -41,7 +43,6 @@ const Page = () => {
   // --------------------------------
   // Set User Data
   // --------------------------------
-
   useEffect(() => {
     if (userData) {
       reset({
@@ -55,7 +56,6 @@ const Page = () => {
   // --------------------------------
   // Image Select
   // --------------------------------
-
   const handleImageChange = (e) => {
     const file = e.target.files?.[0];
 
@@ -94,7 +94,6 @@ const Page = () => {
   // --------------------------------
   // Cleanup Preview URL
   // --------------------------------
-
   useEffect(() => {
     return () => {
       if (previewImage) {
@@ -238,7 +237,7 @@ const Page = () => {
 
         <div className="mt-6 space-y-3">
           {userData?.userRole === "user" && (
-            <button
+            <button onClick={()=>router.push("/products")}
               type="button"
               className="w-full cursor-pointer rounded-lg bg-blue-600 py-3 font-semibold text-white transition hover:bg-blue-700"
             >
@@ -258,7 +257,6 @@ const Page = () => {
         {/* ========================= */}
         {/* Edit Profile */}
         {/* ========================= */}
-
         <AnimatePresence>
           {showEditPage && (
             <motion.div
@@ -407,6 +405,7 @@ const Page = () => {
             </motion.div>
           )}
         </AnimatePresence>
+        
       </motion.div>
     </div>
   );
