@@ -805,7 +805,6 @@ const ProductPage = () => {
           </AnimatePresence>
         </section>
 
-
         {/* ===================================================
             PRODUCT GRID
         ==================================================== */}
@@ -1038,7 +1037,7 @@ const ProductPage = () => {
               opacity: 0,
             }}
             onClick={closeProduct}
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/65 p-2 backdrop-blur-md sm:p-4"
+            className="fixed inset-0 z-80 thin-scrollbar flex items-center justify-center bg-black/65 p-2 backdrop-blur-md sm:p-4"
           >
             <motion.div
               initial={{
@@ -1076,8 +1075,7 @@ const ProductPage = () => {
                 {/* ==========================================
                     IMAGE SECTION
                 =========================================== */}
-
-                <div className="bg-slate-100 p-4 md:p-7">
+                <div className="bg-slate-100 p-2 md:p-7">
                   <div className="relative aspect-square overflow-hidden rounded-[25px] bg-white">
                     {getProductImages(selectedProduct).length > 0 ? (
                       <motion.img
@@ -1134,26 +1132,24 @@ const ProductPage = () => {
                   </div>
 
                   {/* THUMBNAILS */}
-
                   {getProductImages(selectedProduct).length > 1 && (
-                    <div className="mt-4 flex gap-3 overflow-x-auto pb-1">
+                    <div className="mt-4 hidden flex-wrap gap-3 overflow-x-auto pb-1 sm:flex">
                       {getProductImages(selectedProduct).map((image, index) => (
                         <motion.button
-                          whileTap={{
-                            scale: 0.94,
-                          }}
-                          key={image + index}
+                          type="button"
+                          key={`${image}-${index}`}
+                          whileTap={{ scale: 0.94 }}
                           onClick={() => setSelectedImage(index)}
-                          className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-white ${
+                          className={`h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-white transition-all duration-200 ${
                             selectedImage === index
                               ? "border-slate-900 shadow-lg"
-                              : "border-transparent"
+                              : "border-transparent hover:border-slate-300"
                           }`}
                         >
                           <img
                             src={image}
-                            alt=""
-                            className="h-full w-full object-cover cursor-pointer"
+                            alt={`Product image ${index + 1}`}
+                            className="h-full w-full cursor-pointer object-cover"
                           />
                         </motion.button>
                       ))}
@@ -1161,7 +1157,6 @@ const ProductPage = () => {
                   )}
 
                   {/* IMAGE INFO */}
-
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <div className="rounded-2xl bg-white p-3">
                       <Zap size={17} className="text-orange-500" />
@@ -1182,7 +1177,6 @@ const ProductPage = () => {
                 {/* ==========================================
                     DETAILS
                 =========================================== */}
-
                 <div className="p-5 md:p-8">
                   <div className="flex flex-wrap items-center gap-2">
                     {selectedProduct?.category && (
@@ -1204,7 +1198,6 @@ const ProductPage = () => {
                   </h2>
 
                   {/* RATING */}
-
                   <div className="mt-4 flex items-center gap-3">
                     <span className="flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-black text-white">
                       4.5
@@ -1217,7 +1210,6 @@ const ProductPage = () => {
                   </div>
 
                   {/* PRICE */}
-
                   <div className="mt-5 border-y border-slate-100 py-5">
                     <p className="text-3xl font-black">
                       {formatPrice(selectedProduct?.price)}
@@ -1229,7 +1221,6 @@ const ProductPage = () => {
                   </div>
 
                   {/* DESCRIPTION */}
-
                   <div className="mt-5">
                     <h3 className="text-sm font-black">About this product</h3>
 
@@ -1240,7 +1231,6 @@ const ProductPage = () => {
                   </div>
 
                   {/* HIGHLIGHTS */}
-
                   {selectedProduct?.detailsPoint?.length > 0 && (
                     <div className="mt-6">
                       <h3 className="text-sm font-black">Product Highlights</h3>
@@ -1264,7 +1254,6 @@ const ProductPage = () => {
                   )}
 
                   {/* SIZE */}
-
                   {selectedProduct?.size && (
                     <div className="mt-6">
                       <div className="flex items-center justify-between">
@@ -1302,7 +1291,6 @@ const ProductPage = () => {
                   )}
 
                   {/* QUANTITY */}
-
                   <div className="mt-6">
                     <h3 className="text-sm font-black">Quantity</h3>
 
@@ -1341,9 +1329,8 @@ const ProductPage = () => {
                   </div>
 
                   {/* BENEFITS */}
-
-                  <div className="mt-6 grid grid-cols-2 gap-3">
-                    <div className="rounded-2xl bg-slate-50 p-3">
+                  <div className="mt-6 grid grid-cols-2 lg:grid-cols-4  gap-3">
+                    <div className="flex items-center running-border-3 gap-1 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-green-600 text-[10px] font-semibold">
                       <Truck size={18} className="text-emerald-600" />
 
                       <p className="mt-2 text-[10px] font-black">
@@ -1353,7 +1340,7 @@ const ProductPage = () => {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-3">
+                    <div className="rounded-2xl bg-slate-50 p-3 running-border ">
                       <RotateCcw size={18} className="text-blue-600" />
 
                       <p className="mt-2 text-[10px] font-black">
@@ -1363,7 +1350,7 @@ const ProductPage = () => {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-3">
+                    <div className="rounded-2xl bg-slate-50 p-3  running-border-2">
                       <CreditCard size={18} className="text-purple-600" />
 
                       <p className="mt-2 text-[10px] font-black">
@@ -1373,7 +1360,7 @@ const ProductPage = () => {
                       </p>
                     </div>
 
-                    <div className="rounded-2xl bg-slate-50 p-3">
+                    <div className="rounded-2xl bg-slate-50 p-3 running-border">
                       <ShieldCheck size={18} className="text-orange-600" />
 
                       <p className="mt-2 text-[10px] font-black">
@@ -1385,23 +1372,27 @@ const ProductPage = () => {
                   </div>
 
                   {/* ACTIONS */}
-                  <div className="mt-7 grid grid-cols-2 gap-3">
+                  <div className="mt-7 flex w-full flex-wrap gap-4">
+                    {/* Add To Cart */}
                     <button
+                      type="button"
                       disabled={isOutOfStock(selectedProduct)}
                       onClick={() => addToCart(selectedProduct, quantity)}
-                      className="cursor-pointer flex h-14 items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 text-xs font-black transition hover:bg-slate-900 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400"
+                      className="flex h-14 min-w-40 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 px-5 text-xs font-black transition-all duration-200 hover:bg-slate-900 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 disabled:hover:bg-transparent disabled:hover:text-slate-400" 
                     >
                       <ShoppingCart size={18} />
-                      Add To Cart
+                      <span>Add To Cart</span>
                     </button>
 
+                    {/* Buy Now */}
                     <button
+                      type="button"
                       disabled={isOutOfStock(selectedProduct)}
                       onClick={() => buyNow(selectedProduct)}
-                      className="cursor-pointer flex h-14 items-center justify-center gap-2 rounded-2xl bg-slate-900 text-xs font-black text-white shadow-xl transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      className="flex h-14 min-w-40 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 text-xs font-black text-white shadow-xl transition-all duration-200 hover:scale-[1.02] hover:bg-slate-800 active:scale-95 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:hover:scale-100"
                     >
                       <ShoppingBag size={18} />
-                      Buy Now
+                      <span>Buy Now</span>
                     </button>
                   </div>
                 </div>
@@ -1807,7 +1798,7 @@ const ProductPage = () => {
 
                 {/* BENEFITS */}
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-xl border border-slate-100 p-3">
+                  <div className="rounded-xl border border-slate-100 p-3 ">
                     <Truck size={17} className="text-emerald-600" />
 
                     <p className="mt-2 text-[10px] font-black">Free Delivery</p>
