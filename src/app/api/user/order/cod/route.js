@@ -1,18 +1,23 @@
 import { auth } from "@/auth";
 import connectDb from "@/lib/connectDb";
+import eventHandler from "@/lib/eventHandlor";
 import Order from "@/model/order";
 import User from "@/model/user";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    
+    // =====================================================
+    // DATABASE CONNECTION
+    // =====================================================
     await connectDb();
 
-
+    // =====================================================
+    // AUTH CHECK
+    // =====================================================
     const session = await auth();
 
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json(
         {
           success: false,
@@ -22,6 +27,9 @@ export async function POST(req) {
       );
     }
 
+    // =====================================================
+    // FIND USER
+    // =====================================================
     const user = await User.findOne({
       email: session.user.email,
     });
@@ -36,7 +44,9 @@ export async function POST(req) {
       );
     }
 
- 
+    // =====================================================
+    // REQUEST BODY
+    // =====================================================
     const body = await req.json();
 
     const {
@@ -49,8 +59,10 @@ export async function POST(req) {
       totalAmount,
     } = body;
 
-  
-    if (!products || !Array.isArray(products) || products.length === 0) {
+    // =====================================================
+    // PRODUCTS VALIDATION
+    // =====================================================
+    if (!Array.isArray(products) || products.length === 0) {
       return NextResponse.json(
         {
           success: false,
@@ -60,7 +72,10 @@ export async function POST(req) {
       );
     }
 
-    if (!address) {
+    // =====================================================
+    // ADDRESS VALIDATION
+    // =====================================================
+    if (!address || typeof address !== "object") {
       return NextResponse.json(
         {
           success: false,
@@ -69,28 +84,6 @@ export async function POST(req) {
         { status: 400 }
       );
     }
-
-    if (!location) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Location is required",
-        },
-        { status: 400 }
-      );
-    }
-
-
-    if (paymentMethod !== "cod") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid payment method for COD order",
-        },
-        { status: 400 }
-      );
-    }
-
 
     if (
       !address.fullName ||
@@ -109,6 +102,18 @@ export async function POST(req) {
       );
     }
 
+    // =====================================================
+    // LOCATION VALIDATION
+    // =====================================================
+    if (!location || typeof location !== "object") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Location is required",
+        },
+        { status: 400 }
+      );
+    }
 
     if (
       typeof location.latitude !== "number" ||
@@ -123,6 +128,22 @@ export async function POST(req) {
       );
     }
 
+    // =====================================================
+    // PAYMENT METHOD VALIDATION
+    // =====================================================
+    if (paymentMethod !== "cod") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid payment method for COD order",
+        },
+        { status: 400 }
+      );
+    }
+
+    // =====================================================
+    // AMOUNT VALIDATION
+    // =====================================================
     if (
       typeof subtotal !== "number" ||
       typeof totalAmount !== "number"
@@ -136,16 +157,46 @@ export async function POST(req) {
       );
     }
 
+    const finalDeliveryCharge =
+      typeof deliveryCharge === "number" ? deliveryCharge : 0;
 
-    const order = await Order.create({
-      userId: user._id,
+    // =====================================================
+    // PRODUCT VALIDATION
+    // =====================================================
+    const formattedProducts = products.map((item) => {
+      if (!item.productId) {
+        throw new Error("Product ID is missing");
+      }
 
-      products: products.map((item) => ({
-        cartId: item.cartId,
+      if (
+        typeof item.quantity !== "number" ||
+        item.quantity < 1
+      ) {
+        throw new Error("Invalid product quantity");
+      }
+
+      if (
+        typeof item.price !== "number" ||
+        item.price < 0
+      ) {
+        throw new Error("Invalid product price");
+      }
+
+      return {
+        cartId: item.cartId || null,
         productId: item.productId,
         quantity: item.quantity,
         price: item.price,
-      })),
+      };
+    });
+
+    // =====================================================
+    // CREATE ORDER
+    // =====================================================
+    const order = await Order.create({
+      userId: user._id,
+
+      products: formattedProducts,
 
       address: {
         fullName: address.fullName,
@@ -166,14 +217,38 @@ export async function POST(req) {
 
       subtotal,
 
-      deliveryCharge: deliveryCharge || 0,
+      deliveryCharge: finalDeliveryCharge,
 
       totalAmount,
 
       orderStatus: "pending",
+
       paymentStatus: "pending",
     });
 
+    // =====================================================
+    // SAVE ORDER ID IN USER
+    // =====================================================
+    await User.findByIdAndUpdate(
+      user._id,
+      {
+        $push: {
+          orders: order._id,
+        },
+      },
+      {
+        new: true,
+      }
+    );
+
+    // =====================================================
+    // REAL-TIME ORDER EVENT
+    // =====================================================
+    eventHandler("product-order", order);
+
+    // =====================================================
+    // SUCCESS RESPONSE
+    // =====================================================
     return NextResponse.json(
       {
         success: true,
@@ -188,11 +263,9 @@ export async function POST(req) {
     return NextResponse.json(
       {
         success: false,
-        message: "Something went wrong while placing COD order",
-        error:
-          process.env.NODE_ENV === "development"
-            ? error.message
-            : undefined,
+        message:
+          error?.message ||
+          "Something went wrong while placing COD order",
       },
       { status: 500 }
     );
