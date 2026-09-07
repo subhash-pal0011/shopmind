@@ -17,8 +17,6 @@ import { RiListUnordered } from "react-icons/ri";
 import { useRouter } from "next/navigation";
 import { AiOutlineProduct } from "react-icons/ai";
 
-
-
 const Navbar = ({ user }) => {
   const [menuShow, setMenuShow] = useState(false);
   const [sideBar, setSideBar] = useState(false);
@@ -57,7 +55,7 @@ const Navbar = ({ user }) => {
             animate={{ x: 0 }}
             className="w-60 inset-0 z-50 border h-screen fixed bg-gray-100 p-5 rounded-tr-xl rounded-br-xl space-y-5"
           >
-            <motion.div
+            {/* <motion.div
               initial={{ y: -40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5 }}
@@ -65,9 +63,9 @@ const Navbar = ({ user }) => {
             >
               <GoHome />
               <p>Home</p>
-            </motion.div>
+            </motion.div> */}
 
-            <motion.div
+            {/* <motion.div
               initial={{ y: -40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.7 }}
@@ -75,9 +73,9 @@ const Navbar = ({ user }) => {
             >
               <LuLayoutGrid />
               <p>Cotegories</p>
-            </motion.div>
+            </motion.div> */}
 
-            <motion.div
+            {/* <motion.div
               initial={{ y: -40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.9 }}
@@ -85,13 +83,14 @@ const Navbar = ({ user }) => {
             >
               <MdOutlineShoppingBag />
               <p>Shop</p>
-            </motion.div>
+            </motion.div> */}
 
             <motion.div
+              onClick={() => router.push("/products")}
               initial={{ y: -40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 1.1 }}
-              className="flex gap-1.5 items-center"
+              className="flex gap-1.5 items-center cursor-pointer"
             >
               <RiListUnordered />
               <p>Order</p>
@@ -111,33 +110,36 @@ const Navbar = ({ user }) => {
               <p>Profile</p>
             </motion.div>
 
-            <motion.div
-              onClick={() => {
-                router.push("/register");
-                setSideBar(false);
-              }}
-              initial={{ y: -40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1.4 }}
-              className="flex gap-1.5 items-center cursor-pointer"
-            >
-              <PiSignIn />
-              <p>Login</p>
-            </motion.div>
-
-            <motion.div
-              onClick={() => {
-                signOut();
-                setSideBar(false);
-              }}
-              initial={{ y: -40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1.6 }}
-              className="flex gap-1.5 items-center text-red-500 cursor-pointer"
-            >
-              <PiSignOutFill />
-              <p>Sign Out</p>
-            </motion.div>
+            {!user ? (
+              <motion.div
+                onClick={() => {
+                  router.push("/register");
+                  setSideBar(false);
+                }}
+                initial={{ y: -40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.4 }}
+                className="flex gap-1.5 items-center cursor-pointer"
+              >
+                <PiSignIn />
+                <p>Login</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                onClick={() => {
+                  signOut();
+                  setSideBar(false);
+                }}
+                initial={{ y: -40, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 1.6 }}
+                className="flex gap-1.5 items-center text-red-500 cursor-pointer"
+              >
+                <PiSignOutFill />
+                <p>Sign Out</p>
+              </motion.div>
+            )}
+            
           </motion.div>
         </AnimatePresence>,
         document.body,
@@ -158,7 +160,7 @@ const Navbar = ({ user }) => {
         </div>
 
         <div className="flex md:gap-20">
-          {user.userRole === "user" && (
+          {/* {user.userRole === "user" && (
             <div className="hidden lg:flex items-center gap-8 text-sm">
               {["Home", "Categories", "Shop", "Other"].map((item) => (
                 <p
@@ -169,17 +171,15 @@ const Navbar = ({ user }) => {
                 </p>
               ))}
             </div>
-          )}
+          )} */}
 
           {user.userRole === "user" ? (
             <div className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-8">
-
-
               <button onClick={() => router.push("/products")}>
                 <AiOutlineProduct
-                size={17}
-                className="w-5 h-5 sm:w-7 sm:h-6 md:w-7 md:h-6 lg:w-10 lg:h-6 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
-              />
+                  size={17}
+                  className="w-5 h-5 sm:w-7 sm:h-6 md:w-7 md:h-6 lg:w-10 lg:h-6 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
+                />
               </button>
 
               <FiPhoneCall
@@ -188,7 +188,7 @@ const Navbar = ({ user }) => {
               />
 
               <button onClick={() => router.push("/addCard")}>
-                <LuShoppingCart  className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-10 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600" />
+                <LuShoppingCart className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-10 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600" />
               </button>
 
               <div className="relative">
