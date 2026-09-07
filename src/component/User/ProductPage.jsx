@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -30,10 +30,10 @@ import {
   Zap,
   Percent,
   Eye,
+  Camera,
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
-import ReviewPage from "./ReviewPage";
 
 const ProductPage = () => {
   const allProductForUser = useSelector(
@@ -60,6 +60,302 @@ const ProductPage = () => {
   const [position, setPosition] = useState(null);
   const [addressLoading, setAddressLoading] = useState(false);
   const [showOrderPlace, setShowOrderPlace] = useState(false);
+
+  // =========================================================
+  // EMBEDDED PRODUCT REVIEW
+  // Delivered order -> review popup -> submit OR auto hide
+  // =========================================================
+  const REVIEW_SNOOZE_TIME = 60 * 60 * 1000; // 1 hour
+  const REVIEW_SNOOZE_KEY = "product_review_snooze";
+  const [pendingReviews, setPendingReviews] = useState([]);
+  const [reviewProduct, setReviewProduct] = useState(null);
+  const [showReview, setShowReview] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+
+  const [reviewHoverRating, setReviewHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewImages, setReviewImages] = useState([]);
+  const reviewTimerRef = useRef(null);
+
+  const resetReviewForm = () => {
+    setReviewImages((prev) => {
+      prev.forEach((file) => {
+        if (file?.__previewUrl) URL.revokeObjectURL(file.__previewUrl);
+      });
+      return [];
+    });
+    setReviewRating(0);
+    setReviewHoverRating(0);
+    setReviewText("");
+  };
+
+  const getReviewProductId = (item) => {
+    const product = item?.productId;
+    return typeof product === "object"
+      ? product?._id
+      : product || item?.product?._id || item?.productId;
+  };
+
+  const getReviewProduct = (item) => {
+    const product =
+      (item?.productId && typeof item.productId === "object"
+        ? item.productId
+        : null) ||
+      (item?.product && typeof item.product === "object" ? item.product : null);
+
+    return (
+      product || {
+        _id: getReviewProductId(item),
+        title: item?.title || item?.name || "Product",
+        productImg: item?.image ? [item.image] : [],
+        price: item?.price || 0,
+      }
+    );
+  };
+
+  const openNextPendingReview = (list) => {
+    const next = list?.[0];
+
+    if (!next) {
+      clearTimeout(reviewTimerRef.current);
+      setReviewProduct(null);
+      setShowReview(false);
+      resetReviewForm();
+      return;
+    }
+
+    clearTimeout(reviewTimerRef.current);
+    setReviewProduct(next);
+    setShowReview(true);
+    resetReviewForm();
+
+    reviewTimerRef.current = setTimeout(
+      () => {
+        setPendingReviews((prev) => {
+          const remaining = prev.slice(1);
+          setTimeout(() => openNextPendingReview(remaining), 0);
+          return remaining;
+        });
+      },
+      5 * 60 * 1000,
+    );
+  };
+
+  const closeReview = () => {
+    if (reviewProduct?.productId) {
+      try {
+        const existing = JSON.parse(
+          localStorage.getItem(REVIEW_SNOOZE_KEY) || "{}",
+        );
+
+        existing[String(reviewProduct.productId)] = Date.now();
+
+        localStorage.setItem(REVIEW_SNOOZE_KEY, JSON.stringify(existing));
+      } catch (error) {
+        console.error("REVIEW SNOOZE ERROR:", error);
+      }
+    }
+
+    setShowReview(false);
+    setReviewProduct(null);
+    setReviewRating(0);
+    setReviewHoverRating(0);
+    setReviewText("");
+    setReviewImages([]);
+  };
+
+  const loadPendingReviews = async () => {
+    try {
+      setReviewLoading(true);
+
+      const response = await axios.get("/api/user/reviews/pending");
+
+      const reviews = response?.data?.data || [];
+
+      // ==============================
+      // 1 HOUR SNOOZE CHECK
+      // ==============================
+      let snoozedReviews = {};
+
+      try {
+        snoozedReviews = JSON.parse(
+          localStorage.getItem(REVIEW_SNOOZE_KEY) || "{}",
+        );
+      } catch {
+        snoozedReviews = {};
+      }
+
+      const now = Date.now();
+
+      const filteredReviews = reviews.filter((item) => {
+        const productId = String(item.productId);
+
+        const snoozedAt = snoozedReviews[productId];
+
+        // Kabhi snooze nahi hua
+        if (!snoozedAt) {
+          return true;
+        }
+
+        // 1 hour complete ho gaya
+        if (now - Number(snoozedAt) >= REVIEW_SNOOZE_TIME) {
+          delete snoozedReviews[productId];
+          return true;
+        }
+
+        // Abhi 1 hour complete nahi hua
+        return false;
+      });
+
+      // Clean expired snooze records
+      localStorage.setItem(REVIEW_SNOOZE_KEY, JSON.stringify(snoozedReviews));
+
+      setPendingReviews(filteredReviews);
+
+      if (filteredReviews.length > 0) {
+        openNextPendingReview(filteredReviews);
+      }
+    } catch (error) {
+      console.error("PENDING REVIEW ERROR:", error);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPendingReviews();
+
+    return () => {
+      clearTimeout(reviewTimerRef.current);
+    };
+  }, []);
+
+  const getReviewImagePreview = (file) => {
+    if (!file) return "";
+    return file.__previewUrl || "";
+  };
+
+  const handleReviewImageChange = (event) => {
+    const files = Array.from(event.target.files || []);
+
+    if (!files.length) return;
+
+    const validFiles = files.filter((file) => {
+      if (!file.type.startsWith("image/")) {
+        toast.error(`${file.name} is not an image`);
+        return false;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is larger than 5MB`);
+        return false;
+      }
+
+      return true;
+    });
+
+    const filesWithPreview = validFiles.map((file) => {
+      Object.defineProperty(file, "__previewUrl", {
+        value: URL.createObjectURL(file),
+        enumerable: false,
+        configurable: true,
+      });
+      return file;
+    });
+
+    setReviewImages((prev) => [...prev, ...filesWithPreview].slice(0, 5));
+
+    event.target.value = "";
+  };
+
+  const removeReviewImage = (index) => {
+    setReviewImages((prev) => {
+      const file = prev[index];
+      if (file?.__previewUrl) {
+        URL.revokeObjectURL(file.__previewUrl);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  //SUBMIT REVIEW
+  const submitReview = async () => {
+    if (!reviewProduct?.orderId || !reviewProduct?.productId) {
+      toast.error("Review information is missing");
+      return;
+    }
+
+    if (!reviewRating) {
+      toast.error("Please select a rating");
+      return;
+    }
+
+    if (!reviewText.trim()) {
+      toast.error("Please write your review");
+      return;
+    }
+
+    try {
+      setReviewSubmitting(true);
+
+      const formData = new FormData();
+
+      formData.append("orderId", String(reviewProduct.orderId));
+      formData.append("productId", String(reviewProduct.productId));
+      formData.append("rating", String(reviewRating));
+      formData.append("review", reviewText.trim());
+
+      reviewImages.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      // console.log("revev :" ,formData)
+
+      const response = await axios.post(
+        "/api/user/reviews/postReview",
+        formData,
+      );
+      console.log("responce : ", response);
+
+      if (!response?.data?.success) {
+        throw new Error(response?.data?.message || "Unable to submit review");
+      }
+
+      toast.success(response?.data?.message || "Review submitted successfully");
+
+      clearTimeout(reviewTimerRef.current);
+
+      setPendingReviews((prev) => {
+        const remaining = prev.filter(
+          (item) =>
+            !(
+              String(item.orderId) === String(reviewProduct.orderId) &&
+              String(item.productId) === String(reviewProduct.productId)
+            ),
+        );
+
+        setTimeout(() => openNextPendingReview(remaining), 0);
+
+        return remaining;
+      });
+
+      setReviewProduct(null);
+      setShowReview(false);
+      resetReviewForm();
+    } catch (error) {
+      console.error("SUBMIT REVIEW ERROR:", error);
+
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Unable to submit review",
+      );
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
 
   const handleAddressChange = (e) => {
     const { name, value } = e.target;
@@ -184,9 +480,6 @@ const ProductPage = () => {
   const [sortBy, setSortBy] = useState("featured");
   const [showFilters, setShowFilters] = useState(false);
 
-  // =========================================================
-  // FORMAT PRICE
-  // =========================================================
   const formatPrice = (price) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -384,7 +677,7 @@ const ProductPage = () => {
         return;
       }
 
-      const selectedSize = typeof sizeValue !== "undefined" ? sizeValue : null;
+      const selectedSizeValue = selectedSize || null;
 
       const stock = Number(product?.stock || 0);
       const addQuantity = Math.max(Number(qty) || 1, 1);
@@ -392,7 +685,7 @@ const ProductPage = () => {
       const existingProduct = cart.find(
         (item) =>
           item.productId?.toString() === product._id?.toString() &&
-          item.size === selectedSize,
+          item.size === selectedSizeValue,
       );
 
       const currentQuantity = Number(existingProduct?.quantity || 0);
@@ -407,6 +700,7 @@ const ProductPage = () => {
       const res = await axios.post("/api/user/card/addProduct", {
         productId: product._id,
         quantity: addQuantity,
+        size: selectedSizeValue,
       });
 
       if (res.data.success) {
@@ -650,7 +944,7 @@ const ProductPage = () => {
           // 5 second baad hide
           setTimeout(() => {
             setShowOrderPlace(false);
-          }, 5000);
+          }, 1000);
 
           return;
         }
@@ -703,6 +997,273 @@ const ProductPage = () => {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <main className="mx-auto max-w-[1600px] px-4 py-2 md:px-6">
+        {/* Submit review OR automatically disappear after 5 min */}
+        <AnimatePresence>
+          {showReview && reviewProduct && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeReview}
+              className="fixed inset-0 z-9999 flex items-center justify-center bg-black/65 p-3 backdrop-blur-md sm:p-5"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 35, scale: 0.94 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 25, scale: 0.96 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 240,
+                  damping: 24,
+                }}
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-lg overflow-hidden rounded-[30px] bg-white shadow-2xl"
+              >
+                {/* HEADER */}
+                <div className="flex items-center justify-between border-b border-slate-100 p-5 sm:p-6">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50">
+                      <Star
+                        size={19}
+                        className="text-amber-500"
+                        fill="currentColor"
+                      />
+                    </div>
+
+                    <div>
+                      <p>Rating</p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={closeReview}
+                    className="cursor-pointer flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 transition hover:bg-slate-200"
+                    aria-label="Close review"
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
+
+                {/* BODY */}
+                <div className="max-h-[78vh] overflow-y-auto p-5 sm:p-6">
+                  {/* PRODUCT */}
+                  <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
+                    {/* IMAGE */}
+                    <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-white">
+                      {reviewProduct.productImage ? (
+                        <img
+                          src={reviewProduct.productImage}
+                          alt={reviewProduct.productName || "Product"}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center">
+                          <Package size={27} className="text-slate-300" />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* PRODUCT INFO */}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] font-black uppercase tracking-wider text-emerald-600">
+                        Delivered
+                      </p>
+
+                      <h3 className="mt-1 line-clamp-2 text-sm font-black">
+                        {reviewProduct.productName || "Product"}
+                      </h3>
+
+                      {reviewProduct.category && (
+                        <p className="mt-1 text-[10px] text-slate-500">
+                          {reviewProduct.category}
+                        </p>
+                      )}
+
+                      {reviewProduct.price !== undefined && (
+                        <p className="mt-1 text-xs font-bold text-slate-700">
+                          ₹{Number(reviewProduct.price).toLocaleString("en-IN")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* STARS */}
+                  <div className="mt-6 text-center">
+                    <p className="text-sm font-black">
+                      How was your experience?
+                    </p>
+
+                    <div className="mt-4 flex items-center justify-center gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => {
+                        const active =
+                          star <= (reviewHoverRating || reviewRating);
+
+                        return (
+                          <motion.button
+                            key={star}
+                            type="button"
+                            whileHover={{ scale: 1.12 }}
+                            whileTap={{ scale: 0.9 }}
+                            onMouseEnter={() => setReviewHoverRating(star)}
+                            onMouseLeave={() => setReviewHoverRating(0)}
+                            onClick={() => setReviewRating(star)}
+                            className="cursor-pointer rounded-xl p-1 outline-none"
+                            aria-label={`Rate ${star} star${
+                              star > 1 ? "s" : ""
+                            }`}
+                          >
+                            <Star
+                              size={34}
+                              className={
+                                active ? "text-amber-400" : "text-slate-200"
+                              }
+                              fill={active ? "currentColor" : "none"}
+                            />
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+
+                    <p className="mt-2 text-[10px] font-bold text-slate-400">
+                      {reviewRating === 0
+                        ? "Tap a star to rate"
+                        : `${reviewRating}/5 rating selected`}
+                    </p>
+                  </div>
+
+                  {/* REVIEW TEXT */}
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black">
+                        Write your review
+                      </label>
+
+                      <span className="text-[10px] font-semibold text-slate-400">
+                        {reviewText.length}/1000
+                      </span>
+                    </div>
+
+                    <textarea
+                      value={reviewText}
+                      onChange={(e) =>
+                        setReviewText(e.target.value.slice(0, 1000))
+                      }
+                      rows={5}
+                      placeholder="Tell us what you liked or what can be improved..."
+                      className="mt-2 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs font-medium leading-5 outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-100"
+                    />
+                  </div>
+
+                  {/* IMAGES */}
+                  <div className="mt-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-black">Add photos</p>
+
+                        <p className="mt-1 text-[9px] text-slate-400">
+                          Optional • Maximum 5 photos • 5MB each
+                        </p>
+                      </div>
+
+                      <label className="flex h-10 cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-3 text-[10px] font-black transition hover:bg-slate-50">
+                        <Camera size={15} />
+                        Add Photos
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleReviewImageChange}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+
+                    {reviewImages.length > 0 && (
+                      <div className="mt-3 grid grid-cols-5 gap-2">
+                        {reviewImages.map((file, index) => (
+                          <div
+                            key={`${file.name}-${index}`}
+                            className="group relative aspect-square overflow-hidden rounded-xl bg-slate-100"
+                          >
+                            <img
+                              src={getReviewImagePreview(file)}
+                              alt={`Review ${index + 1}`}
+                              className="h-full w-full object-cover"
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() => removeReviewImage(index)}
+                              className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition group-hover:opacity-100"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* INFO */}
+                  <div className="mt-5 flex items-start gap-3 rounded-2xl bg-blue-50 p-4">
+                    <ShieldCheck
+                      size={18}
+                      className="mt-0.5 shrink-0 text-blue-600"
+                    />
+
+                    <div>
+                      <p className="text-[10px] font-black text-blue-700">
+                        Verified purchase review
+                      </p>
+
+                      <p className="mt-1 text-[9px] leading-4 text-blue-600">
+                        Your review is linked to this delivered order.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* ACTIONS */}
+                  <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={closeReview}
+                      disabled={reviewSubmitting}
+                      className="cursor-pointer h-12 rounded-2xl border border-slate-200 bg-white text-xs font-black transition hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      Review Later
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={submitReview}
+                      disabled={reviewSubmitting || reviewRating === 0}
+                      className="cursor-pointer flex h-12 items-center justify-center gap-2 rounded-2xl bg-slate-900 text-xs font-black text-white shadow-xl transition hover:scale-[1.01] active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {reviewSubmitting ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 size={16} />
+                          Submit Review
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <p className="mt-4 text-center text-[9px] text-slate-400">
+                    If you don't submit a review, this popup will automatically
+                    disappear after 5 minutes.
+                  </p>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* ===================================================
             FILTER BAR
         ==================================================== */}
@@ -848,6 +1409,21 @@ const ProductPage = () => {
               const discount = getDiscount(item);
               const isWishlisted = wishlist.includes(item?._id);
 
+              // ==========================================
+              // REVIEW DATA
+              // ==========================================
+              const reviews = Array.isArray(item?.reviews) ? item.reviews : [];
+
+              const reviewCount = reviews.length;
+
+              const averageRating =
+                reviewCount > 0
+                  ? reviews.reduce(
+                      (total, review) => total + Number(review?.rating || 0),
+                      0,
+                    ) / reviewCount
+                  : 0;
+
               return (
                 <motion.article
                   key={item?._id || index}
@@ -892,7 +1468,7 @@ const ProductPage = () => {
                     )}
 
                     {/* IMAGE OVERLAY */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/20 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
 
                     {/* CATEGORY */}
                     {item?.category && (
@@ -903,7 +1479,7 @@ const ProductPage = () => {
 
                     {/* DISCOUNT */}
                     {discount > 0 && (
-                      <span className="absolute left-3 bottom-3 flex items-center gap-1 rounded-full bg-red-500 px-3 py-1.5 text-[9px] font-black text-white shadow-lg">
+                      <span className="absolute bottom-3 left-3 flex items-center gap-1 rounded-full bg-red-500 px-3 py-1.5 text-[9px] font-black text-white shadow-lg">
                         <Percent size={10} />
                         {discount}% OFF
                       </span>
@@ -918,7 +1494,7 @@ const ProductPage = () => {
                         e.stopPropagation();
                         toggleWishlist(item);
                       }}
-                      className={`cursor-pointer absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition ${
+                      className={`absolute right-3 top-3 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full shadow-lg transition ${
                         isWishlisted
                           ? "bg-red-500 text-white"
                           : "bg-white/95 text-slate-700 hover:text-red-500"
@@ -942,15 +1518,55 @@ const ProductPage = () => {
 
                   {/* CONTENT */}
                   <div className="p-5">
+                    {/* ============================= */}
                     {/* RATING / DELIVERY */}
-                    <div className="mb-3 flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1.5 text-[10px] font-black text-amber-600">
-                        <Star size={11} fill="currentColor" />
-                        4.5
-                      </span>
+                    {/* ============================= */}
+                    <div className="mb-3 flex min-h-7.5 items-center justify-between gap-2">
+                      {/* REVIEW RATING */}
+                      {reviewCount > 0 ? (
+                        <div className="flex items-center gap-2">
+                          {/* STARS */}
+                          <div className="flex items-center gap-0.5 rounded-lg bg-amber-50 px-2.5 py-1.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                size={11}
+                                className={
+                                  star <= Math.round(averageRating)
+                                    ? "text-amber-500"
+                                    : "text-slate-300"
+                                }
+                                fill={
+                                  star <= Math.round(averageRating)
+                                    ? "currentColor"
+                                    : "none"
+                                }
+                              />
+                            ))}
 
+                            {/* AVERAGE */}
+                            <span className="ml-1 text-[10px] font-black text-amber-600">
+                              {averageRating.toFixed(1)}
+                            </span>
+                          </div>
+
+                          {/* REVIEW COUNT */}
+                          <span className="text-[9px] font-bold text-slate-400">
+                            {reviewCount}{" "}
+                            {reviewCount === 1 ? "review" : "reviews"}
+                          </span>
+                        </div>
+                      ) : (
+                        /* NO REVIEW */
+                        <span className="flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[10px] font-black text-slate-400">
+                          <Star size={11} />
+                          No reviews
+                        </span>
+                      )}
+
+                      {/* FREE DELIVERY */}
                       {item?.freeDelivery && (
-                        <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600">
+                        <span className="flex flex-wrap items-center gap-1 text-[9px] font-black text-emerald-600">
                           <Truck size={12} />
                           FREE DELIVERY
                         </span>
@@ -960,7 +1576,7 @@ const ProductPage = () => {
                     {/* TITLE */}
                     <h2
                       onClick={() => openProduct(item)}
-                      className="line-clamp-2 min-h-[42px] cursor-pointer text-sm font-black leading-5 transition hover:text-blue-600"
+                      className="line-clamp-2 min-h-10.5 cursor-pointer text-sm font-black leading-5 transition hover:text-blue-600"
                     >
                       {item?.title || "Untitled Product"}
                     </h2>
@@ -994,10 +1610,11 @@ const ProductPage = () => {
                         </p>
                       </div>
 
+                      {/* VIEW BUTTON */}
                       <button
                         disabled={outOfStock}
                         onClick={() => openProduct(item)}
-                        className={`cursor-pointer flex h-11 items-center gap-2 rounded-xl px-4 text-xs font-black transition ${
+                        className={`flex h-11 cursor-pointer items-center gap-2 rounded-xl px-4 text-xs font-black transition ${
                           outOfStock
                             ? "cursor-not-allowed bg-slate-100 text-slate-400"
                             : "bg-slate-900 text-white shadow-lg hover:scale-105 active:scale-95"
@@ -1378,7 +1995,7 @@ const ProductPage = () => {
                       type="button"
                       disabled={isOutOfStock(selectedProduct)}
                       onClick={() => addToCart(selectedProduct, quantity)}
-                      className="flex h-14 min-w-40 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 px-5 text-xs font-black transition-all duration-200 hover:bg-slate-900 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 disabled:hover:bg-transparent disabled:hover:text-slate-400" 
+                      className="flex h-14 min-w-40 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 border-slate-900 px-5 text-xs font-black transition-all duration-200 hover:bg-slate-900 hover:text-white active:scale-95 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 disabled:hover:bg-transparent disabled:hover:text-slate-400"
                     >
                       <ShoppingCart size={18} />
                       <span>Add To Cart</span>
@@ -1705,12 +2322,12 @@ const ProductPage = () => {
 
               {/* BODY */}
 
-              <div className="max-h-[70vh] overflow-y-auto p-5 md:p-6">
+              <div className="max-h-[70vh] overflow-y-auto p-2 md:p-6">
                 {/* SINGLE PRODUCT */}
                 {orderProduct ? (
-                  <div className="rounded-2xl bg-slate-50 p-4">
+                  <div className="rounded">
                     <div className="flex gap-4">
-                      <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-white">
+                      <div className="h-24 w-auto shrink-0 overflow-hidden rounded-xl bg-white">
                         {orderProduct.image ? (
                           <img
                             src={orderProduct.image}
@@ -1829,7 +2446,7 @@ const ProductPage = () => {
 
                 {/* DELIVERY ADDRESS */}
                 <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white">
                         <MapPin size={18} className="text-red-500" />
@@ -1867,7 +2484,6 @@ const ProductPage = () => {
                   {/* FORM */}
 
                   <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {/* NAME */}
                     <div>
                       <input
                         type="text"
