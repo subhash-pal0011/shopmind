@@ -152,6 +152,15 @@ const productSchema = new mongoose.Schema(
           maxlength: 500,
         },
 
+        images: {
+          type: [String],
+          default: [],
+          validate: {
+            validator: (images) => images.length <= 5,
+            message: "Maximum 5 review images are allowed",
+          },
+        },
+
         createdDate: {
           type: Date,
           default: Date.now,
@@ -163,6 +172,7 @@ const productSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
-const Product = mongoose.models.Product || mongoose.model("Product", productSchema);
-  
+const Product =
+  mongoose.models.Product || mongoose.model("Product", productSchema);
+
 export default Product;
