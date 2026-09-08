@@ -1,29 +1,16 @@
 import { auth } from "@/auth";
 import connectDb from "@/lib/connectDb";
 import Order from "@/model/order";
+import User from "@/model/user";
 import { NextResponse } from "next/server";
 
 export async function GET(request) {
   try {
-    // ==========================================
-    // DATABASE CONNECTION
-    // ==========================================
-
     await connectDb();
-
-    // ==========================================
-    // GET SESSION
-    // ==========================================
 
     const session = await auth();
 
-    console.log("SESSION:", session);
-
-    // ==========================================
-    // AUTH CHECK
-    // ==========================================
-
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       return NextResponse.json(
         {
           success: false,
@@ -35,15 +22,33 @@ export async function GET(request) {
       );
     }
 
-    // ==========================================
-    // VENDOR CHECK
-    // ==========================================
+    const vendor = await User.findOne({
+      email: session.user.email,
+    })
+      .select(
+        "_id name email phone userRole shopName shopAddress approvalStatus"
+      )
+    .lean();
 
-    if (session.user.role !== "vendor") {
+
+    if (!vendor) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "User account not found.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    if (vendor.userRole !== "vendor") {
       return NextResponse.json(
         {
           success: false,
           message: "Access denied. Only vendors can view orders.",
+          role: vendor.userRole,
         },
         {
           status: 403,
@@ -51,24 +56,7 @@ export async function GET(request) {
       );
     }
 
-    const vendorId = session.user.id;
-
-    console.log("VENDOR ID:", vendorId);
-
-    // ==========================================
-    // GET VENDOR ORDERS
-    // ==========================================
-    //
-    // Product model:
-    // vendorUser -> User ID
-    //
-    // Order model:
-    // products.productId -> Product ID
-    //
-    // Therefore we first populate productId
-    // and then filter products by vendorUser.
-    //
-    // ==========================================
+    const vendorId = vendor._id.toString();
 
     const orders = await Order.find({
       orderStatus: {
@@ -81,7 +69,7 @@ export async function GET(request) {
         ],
       },
     })
-      .populate({
+    .populate({
         path: "products.productId",
         select: `
           title
@@ -102,64 +90,198 @@ export async function GET(request) {
           warranty
           detailsPoint
         `,
-      })
+    })
       .populate({
         path: "userId",
-        select: "name email phone",
+        select: "name email phone image profileImage",
       })
+
       .sort({
         createdAt: -1,
       })
-      .lean();
 
-    // ==========================================
-    // FILTER ONLY THIS VENDOR'S PRODUCTS
-    // ==========================================
+    .lean();
 
     const vendorOrders = orders
       .map((order) => {
-        const vendorProducts = (order.products || []).filter((item) => {
-          if (!item.productId) {
-            return false;
+        const vendorProducts = (order.products || []).filter(
+          (item) => {
+            if (!item.productId) {
+              return false;
+            }
+            const productVendorId =
+            item.productId.vendorUser;
+
+            if (!productVendorId) {
+              return false;
+            }
+
+            return (
+              productVendorId.toString() ===
+              vendorId
+            );
           }
+        );
 
-          const productVendorId = item.productId.vendorUser;
-
-          return (
-            productVendorId &&
-            productVendorId.toString() === vendorId.toString()
-          );
-        });
-
-        // If this order has no product
-        // belonging to this vendor, remove it.
         if (vendorProducts.length === 0) {
           return null;
         }
+        const vendorSubtotal =
+          vendorProducts.reduce(
+            (total, item) => {
+              const price = Number(
+                item.price || 0
+              );
+
+              const quantity = Number(
+                item.quantity || 0
+              );
+
+              return (
+                total +
+                price * quantity
+              );
+            },
+            0
+          );
+
+        const vendorTotalItems =
+          vendorProducts.reduce(
+            (total, item) => {
+              return (
+                total +
+                Number(item.quantity || 0)
+              );
+            },
+            0
+          );
 
         return {
-          ...order,
+          _id: order._id,
 
-          // Only this vendor's products
+          userId: order.userId,
+
+          customer: order.userId
+            ? {
+                _id: order.userId._id,
+                name: order.userId.name,
+                email: order.userId.email,
+                phone: order.userId.phone,
+                image:
+                  order.userId.profileImage ||
+                  order.userId.image ||
+                  null,
+              }
+            : null,
+
+          address: order.address,
+
+          location: order.location,
+
+          paymentMethod:
+            order.paymentMethod,
+
+          paymentStatus:
+            order.paymentStatus,
+
+          orderStatus:
+            order.orderStatus,
+
           products: vendorProducts,
 
-          // Optional vendor-specific subtotal
-          vendorSubtotal: vendorProducts.reduce((total, item) => {
-            return total + item.price * item.quantity;
-          }, 0),
+          vendorSubtotal,
+
+          vendorTotalItems,
+
+          createdAt:
+            order.createdAt,
+
+          updatedAt:
+            order.updatedAt,
         };
       })
       .filter(Boolean);
 
+   
+    const totalOrders =
+      vendorOrders.length;
+
+    const totalItems = vendorOrders.reduce(
+      (total, order) => {
+        return (
+          total +
+          Number(
+            order.vendorTotalItems || 0
+          )
+        );
+      },
+      0
+    );
+
+    const totalRevenue = vendorOrders.reduce(
+      (total, order) => {
+        return (
+          total +
+          Number(
+            order.vendorSubtotal || 0
+          )
+        );
+      },
+      0
+    );
+
     // ==========================================
-    // RESPONSE
+    // ORDER STATUS COUNT
     // ==========================================
+
+    const orderStatus = {
+      pending: 0,
+      confirmed: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+    };
+
+    vendorOrders.forEach((order) => {
+      if (
+        orderStatus[
+          order.orderStatus
+        ] !== undefined
+      ) {
+        orderStatus[
+          order.orderStatus
+        ]++;
+      }
+    });
 
     return NextResponse.json(
       {
         success: true,
-        message: "Vendor orders fetched successfully.",
-        count: vendorOrders.length,
+
+        message:
+          "Vendor orders fetched successfully.",
+
+        vendor: {
+          _id: vendor._id,
+          name: vendor.name,
+          email: vendor.email,
+          phone: vendor.phone,
+          shopName: vendor.shopName,
+          shopAddress: vendor.shopAddress,
+          approvalStatus:
+            vendor.approvalStatus,
+        },
+
+        count: totalOrders,
+
+        summary: {
+          totalOrders,
+          totalItems,
+          totalRevenue,
+        },
+
+        orderStatus,
+
         data: vendorOrders,
       },
       {
@@ -167,20 +289,16 @@ export async function GET(request) {
       }
     );
   } catch (error) {
-    // ==========================================
-    // ERROR
-    // ==========================================
-
-    console.error("GET VENDOR ORDERS ERROR:", error);
+    console.error(
+      "GET VENDOR ORDERS ERROR:",
+      error
+    );
 
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to fetch vendor orders.",
-        error:
-          process.env.NODE_ENV === "development"
-            ? error.message
-            : undefined,
+        message:
+          "Failed to fetch vendor orders.",
       },
       {
         status: 500,
