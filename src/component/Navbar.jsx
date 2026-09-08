@@ -1,295 +1,302 @@
 "use client";
+
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { FiPhoneCall } from "react-icons/fi";
-import { LuCircleUserRound, LuShoppingCart } from "react-icons/lu";
-import { HiMiniBars3 } from "react-icons/hi2";
-import { RxCross2 } from "react-icons/rx";
-import { PiSignIn } from "react-icons/pi";
-import { PiSignOutFill } from "react-icons/pi";
-import { useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { createPortal } from "react-dom";
-import { GoHome } from "react-icons/go";
-import { LuLayoutGrid } from "react-icons/lu";
-import { MdOutlineShoppingBag } from "react-icons/md";
+import { AnimatePresence, motion } from "motion/react";
+
+import { FiPhoneCall } from "react-icons/fi";
+import { LuCircleUserRound, LuShoppingCart, LuX } from "react-icons/lu";
+import { HiMiniBars3 } from "react-icons/hi2";
+import { PiSignIn, PiSignOutFill } from "react-icons/pi";
 import { RiListUnordered } from "react-icons/ri";
-import { useRouter } from "next/navigation";
 import { AiOutlineProduct } from "react-icons/ai";
 
-const Navbar = ({ user }) => {
-  const [menuShow, setMenuShow] = useState(false);
-  const [sideBar, setSideBar] = useState(false);
+const Navbar = ({ user = null }) => {
   const router = useRouter();
+  const pathname = usePathname();
+  const profileRef = useRef(null);
 
-  const handleMenuItemClick = (item) => {
-    setMenuShow(false);
-    setSideBar(false);
-    item.onClick?.();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const role = user?.userRole?.toLowerCase() || "";
+  const isNormalUser = role === "user";
+  const isVendor = role === "vendor";
+  const isAdmin = role === "admin";
+
+  const userImage = user?.image || user?.profileImage || null;
+
+  const closeMenus = () => {
+    setProfileOpen(false);
+    setMobileOpen(false);
   };
 
-  const menuItems = [
-    user && {
-      icon: <LuCircleUserRound size={15} />,
-      label: "Profile",
-      onClick: () => router.push("/edit-profile"),
-    },
-    !user && {
-      icon: <PiSignIn />,
-      label: "Sign In",
-      onClick: () => router.push("/register"),
-    },
-    user && {
-      icon: <PiSignOutFill color="red" />,
-      label: "Sign Out",
-      onClick: () => signOut(),
-    },
-  ].filter(Boolean);
+  const goTo = (path) => {
+    closeMenus();
+    if (pathname !== path) router.push(path);
+  };
 
-  const element = sideBar
-    ? createPortal(
-        <AnimatePresence>
-          <motion.div
-            key="menu"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            className="w-60 inset-0 z-50 border h-screen fixed bg-gray-100 p-5 rounded-tr-xl rounded-br-xl space-y-5"
-          >
-            {/* <motion.div
-              initial={{ y: -40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="flex gap-1.5 items-center"
-            >
-              <GoHome />
-              <p>Home</p>
-            </motion.div> */}
+  const handleCall = () => {
+    closeMenus();
+    window.location.href = "tel:+919999999999";
+  };
 
-            {/* <motion.div
-              initial={{ y: -40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.7 }}
-              className="flex gap-1.5 items-center"
-            >
-              <LuLayoutGrid />
-              <p>Cotegories</p>
-            </motion.div> */}
+  const handleSignOut = async () => {
+    closeMenus();
+    await signOut({ callbackUrl: "/" });
+  };
 
-            {/* <motion.div
-              initial={{ y: -40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.9 }}
-              className="flex gap-1.5 items-center"
-            >
-              <MdOutlineShoppingBag />
-              <p>Shop</p>
-            </motion.div> */}
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) setProfileOpen(false);
+    };
 
-            <motion.div
-              onClick={() => router.push("/products")}
-              initial={{ y: -40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1.1 }}
-              className="flex gap-1.5 items-center cursor-pointer"
-            >
-              <RiListUnordered />
-              <p>Order</p>
-            </motion.div>
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setProfileOpen(false);
+        setMobileOpen(false);
+      }
+    };
 
-            <motion.div
-              onClick={() => {
-                router.push("/edit-profile");
-                setSideBar(false);
-              }}
-              initial={{ y: -40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1.3 }}
-              className="flex gap-1.5 items-center cursor-pointer"
-            >
-              <LuCircleUserRound />
-              <p>Profile</p>
-            </motion.div>
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
 
-            {!user ? (
-              <motion.div
-                onClick={() => {
-                  router.push("/register");
-                  setSideBar(false);
-                }}
-                initial={{ y: -40, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 1.4 }}
-                className="flex gap-1.5 items-center cursor-pointer"
-              >
-                <PiSignIn />
-                <p>Login</p>
-              </motion.div>
-            ) : (
-              <motion.div
-                onClick={() => {
-                  signOut();
-                  setSideBar(false);
-                }}
-                initial={{ y: -40, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 1.6 }}
-                className="flex gap-1.5 items-center text-red-500 cursor-pointer"
-              >
-                <PiSignOutFill />
-                <p>Sign Out</p>
-              </motion.div>
-            )}
-            
-          </motion.div>
-        </AnimatePresence>,
-        document.body,
-      )
-    : null;
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
-  return (
-    <nav className="sticky top-0 z-50 w-full bg-white shadow-md px-4 md:px-8 py-4 md:py-2">
-      <div className="max-w-7xl mx-auto flex items-center justify-around">
-        <div>
-          <Image
-            src="/logo-2.png"
-            alt="ShopMind Logo"
-            width={250}
-            height={50}
-            priority
-          />
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 640) setMobileOpen(false);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const ProfileButton = ({ icon, label, onClick, danger = false }) => (
+    <button type="button" onClick={onClick} className={`flex w-full cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-all duration-200 ${danger ? "text-red-500 hover:bg-red-50" : "text-gray-700 hover:bg-gray-100 hover:text-blue-600"}`}>
+      <span className="shrink-0">{icon}</span>
+      <span>{label}</span>
+    </button>
+  );
+
+  const ProfileDropdown = () => (
+    <AnimatePresence>
+      {profileOpen && (
+        <motion.div initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.96 }} transition={{ duration: 0.18, ease: "easeOut" }} className="absolute right-0 top-[calc(100%+10px)] z-100 w-62.5 max-w-[calc(100vw-24px)] overflow-hidden rounded-2xl border border-gray-100 bg-white p-1.5 shadow-[0_15px_45px_rgba(0,0,0,0.12)]">
+          {user ? (
+            <>
+              <div className="border-b border-gray-100 px-3 py-3.5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-100">
+                    {userImage ? <Image src={userImage} alt={user?.name || "User"} width={44} height={44} className="h-full w-full object-cover" /> : <LuCircleUserRound size={25} className="text-gray-500" />}
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold text-gray-800">{user?.name || "User"}</p>
+                    <p className="mt-0.5 truncate text-[11px] text-gray-500">{user?.email || ""}</p>
+
+                    {role && <span className="mt-1.5 inline-flex rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-blue-600">{role}</span>}
+                  </div>
+                </div>
+              </div>
+
+              <ProfileButton icon={<LuCircleUserRound size={18} />} label="User Profile" onClick={() => goTo("/edit-profile")} />
+
+              {isNormalUser && <ProfileButton icon={<RiListUnordered size={18} />} label="Orders" onClick={() => goTo("/products")} />}
+
+              <ProfileButton icon={<PiSignOutFill size={18} />} label="Sign Out" danger onClick={handleSignOut} />
+            </>
+          ) : (
+            <>
+              <div className="px-3 py-3.5">
+                <p className="text-sm font-semibold text-gray-800">Welcome 👋</p>
+                <p className="mt-1 text-xs leading-5 text-gray-500">Login to manage your account and orders.</p>
+              </div>
+
+              <ProfileButton icon={<PiSignIn size={18} />} label="Login" onClick={() => goTo("/login")} />
+              <ProfileButton icon={<LuCircleUserRound size={18} />} label="Create Account" onClick={() => goTo("/register")} />
+            </>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
+  const IconButton = ({ icon, label, onClick, className = "" }) => (
+    <motion.button type="button" whileHover={{ scale: 1.08, y: -1 }} whileTap={{ scale: 0.9 }} onClick={onClick} aria-label={label} className={`flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-gray-600 transition-colors duration-200 hover:bg-gray-50 hover:text-blue-500 ${className}`}>
+      {icon}
+    </motion.button>
+  );
+
+  const MobileMenuItem = ({ icon, label, onClick, danger = false, primary = false }) => (
+    <motion.button type="button" whileTap={{ scale: 0.98 }} onClick={onClick} className={`flex w-full cursor-pointer items-center gap-3 rounded-xl px-4 py-3 text-left text-sm font-medium transition-all duration-200 ${danger ? "text-red-500 hover:bg-red-50" : primary ? "bg-gray-900 text-white hover:bg-gray-800" : "text-gray-700 hover:bg-gray-100 hover:text-blue-600"}`}>
+      <span className="shrink-0">{icon}</span>
+      <span>{label}</span>
+    </motion.button>
+  );
+
+  const UserInfoCard = () => (
+    <div className="mb-6 rounded-2xl bg-gray-50 p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gray-200">
+          {userImage ? <Image src={userImage} alt={user?.name || "User"} width={44} height={44} className="h-full w-full object-cover" /> : <LuCircleUserRound size={24} className="text-gray-500" />}
         </div>
 
-        <div className="flex md:gap-20">
-          {/* {user.userRole === "user" && (
-            <div className="hidden lg:flex items-center gap-8 text-sm">
-              {["Home", "Categories", "Shop", "Other"].map((item) => (
-                <p
-                  key={item}
-                  className="cursor-pointer text-gray-700 transition-all duration-300 ease-in-out hover:text-blue-600 hover:-translate-y-1 after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-blue-600 after:transition-all after:duration-300 hover:after:w-full"
-                >
-                  {item}
-                </p>
-              ))}
-            </div>
-          )} */}
-
-          {user.userRole === "user" ? (
-            <div className="flex items-center gap-4 sm:gap-6 md:gap-8 lg:gap-8">
-              <button onClick={() => router.push("/products")}>
-                <AiOutlineProduct
-                  size={17}
-                  className="w-5 h-5 sm:w-7 sm:h-6 md:w-7 md:h-6 lg:w-10 lg:h-6 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
-                />
-              </button>
-
-              <FiPhoneCall
-                size={17}
-                className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all text-gray-600 duration-200"
-              />
-
-              <button onClick={() => router.push("/addCard")}>
-                <LuShoppingCart className="w-5 h-4 sm:w-7 sm:h-5 md:w-7 md:h-6 lg:w-10 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600" />
-              </button>
-
-              <div className="relative">
-                <LuCircleUserRound
-                  onClick={() => setMenuShow(!menuShow)}
-                  size={17}
-                  className="w-5 h-4 sm:w-6 sm:h-5 md:w-7 md:h-6 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600 hidden lg:flex"
-                />
-
-                <AnimatePresence>
-                  {menuShow && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10, ease: "ease-in" }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="absolute right-0 top-10 w-36 bg-white shadow-lg rounded-md border py-2 z-50 p-1"
-                    >
-                      {menuItems.map((item, index) => (
-                        <div
-                          key={index}
-                          onClick={() => handleMenuItemClick(item)}
-                          className="p-2 hover:bg-gray-100 cursor-pointer transition-all flex items-center gap-1 rounded"
-                        >
-                          {item.icon}
-                          <p
-                            className={`text-sm ${
-                              item.label === "Sign Out" ? "text-red-500" : ""
-                            }`}
-                          >
-                            {item.label}
-                          </p>
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {sideBar ? (
-                <RxCross2
-                  onClick={() => setSideBar((prev) => !prev)}
-                  className="w-6 h-5 sm:w-6 sm:h-5 md:w-7 md:h-6 lg:hidden cursor-pointer text-red-500"
-                />
-              ) : (
-                <HiMiniBars3
-                  onClick={() => setSideBar((prev) => !prev)}
-                  className="w-6 h-4 sm:w-6 sm:h-5 md:w-7 md:h-6 text-gray-600 lg:hidden cursor-pointer"
-                />
-              )}
-            </div>
-          ) : (
-            <div className="flex gap-8">
-              <FiPhoneCall
-                size={30}
-                className="w-4 h-5 sm:w-7 sm:h-5 md:w-5 md:h-5 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all text-gray-600 duration-200"
-              />
-
-              <div className="relative">
-                <LuCircleUserRound
-                  onClick={() => setMenuShow(!menuShow)}
-                  size={30}
-                  className="w-4 h-5 sm:w-7 sm:h-5 md:w-5 md:h-5 lg:w-7 lg:h-5 cursor-pointer hover:scale-110 hover:text-blue-500 transition-all duration-200 text-gray-600"
-                />
-
-                <AnimatePresence>
-                  {menuShow && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10, ease: "ease-in" }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
-                      className="absolute right-0 top-10 w-36 bg-white shadow-lg rounded-md border py-2 z-50 p-1"
-                    >
-                      {menuItems.map((item, index) => (
-                        <div
-                          key={index}
-                          onClick={() => handleMenuItemClick(item)}
-                          className="p-2 hover:bg-gray-100 cursor-pointer transition-all flex items-center gap-1 rounded"
-                        >
-                          {item.icon}
-
-                          <p
-                            className={`text-sm ${
-                              item.label === "Sign Out" ? "text-red-500" : ""
-                            }`}
-                          >
-                            {item.label}
-                          </p>
-                        </div>
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
-          )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-gray-800">{user?.name || "User"}</p>
+          <p className="truncate text-xs text-gray-500">{user?.email || ""}</p>
+          {role && <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-blue-500">{role}</p>}
         </div>
       </div>
-      {element}
-    </nav>
+    </div>
+  );
+
+  const MobileSidebar = () => (
+    <AnimatePresence>
+      {mobileOpen && (
+        <>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} onClick={() => setMobileOpen(false)} className="fixed inset-0 z-9998 bg-black/40 backdrop-blur-[2px] sm:hidden" />
+
+          <motion.aside initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", stiffness: 320, damping: 32 }} className="fixed right-0 top-0 z-9999 flex h-100dvh w-75 max-w-[88vw] flex-col overflow-hidden bg-white shadow-2xl sm:hidden">
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
+              <button type="button" onClick={() => goTo("/")} className="cursor-pointer" aria-label="Go to home">
+                <Image src="/logo-2.png" alt="ShopMind Logo" width={150} height={45} priority className="h-auto w-31.25 object-contain" />
+              </button>
+
+              <motion.button type="button" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.9 }} onClick={() => setMobileOpen(false)} aria-label="Close menu" className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-red-50 text-red-500 transition-colors hover:bg-red-100">
+                <LuX size={20} />
+              </motion.button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-5">
+              {user ? (
+                <>
+                  <UserInfoCard />
+
+                  {isNormalUser && (
+                    <div className="space-y-1.5">
+                      <MobileMenuItem icon={<AiOutlineProduct size={20} />} label="Products" onClick={() => goTo("/products")} />
+                      <MobileMenuItem icon={<FiPhoneCall size={20} />} label="Call" onClick={handleCall} />
+                      <MobileMenuItem icon={<LuShoppingCart size={20} />} label="Shopping Cart" onClick={() => goTo("/addCard")} />
+                      <MobileMenuItem icon={<LuCircleUserRound size={20} />} label="User Profile" onClick={() => goTo("/edit-profile")} />
+                      <MobileMenuItem icon={<RiListUnordered size={20} />} label="Orders" onClick={() => goTo("/products")} />
+                    </div>
+                  )}
+
+                  {(isVendor || isAdmin) && (
+                    <div className="space-y-1.5">
+                      <MobileMenuItem icon={<FiPhoneCall size={20} />} label="Call" onClick={handleCall} />
+                      <MobileMenuItem icon={<LuCircleUserRound size={20} />} label="User Profile" onClick={() => goTo("/edit-profile")} />
+                    </div>
+                  )}
+
+                  <div className="my-5 border-t border-gray-100" />
+
+                  <MobileMenuItem icon={<PiSignOutFill size={20} />} label="Sign Out" danger onClick={handleSignOut} />
+                </>
+              ) : (
+                <>
+                  <div className="mb-6 rounded-2xl bg-gray-50 p-4">
+                    <p className="text-sm font-semibold text-gray-800">Welcome to ShopMind 👋</p>
+                    <p className="mt-1 text-xs leading-5 text-gray-500">Login when you are ready to place an order.</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <MobileMenuItem icon={<FiPhoneCall size={20} />} label="Call" onClick={handleCall} />
+                    <MobileMenuItem icon={<PiSignIn size={20} />} label="Login" primary onClick={() => goTo("/login")} />
+                    <MobileMenuItem icon={<LuCircleUserRound size={20} />} label="Create Account" onClick={() => goTo("/register")} />
+                  </div>
+                </>
+              )}
+            </div>
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
+  );
+
+  return (
+    <>
+      <nav className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/95 px-3 py-2.5 shadow-sm backdrop-blur-md sm:px-4 sm:py-3">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3">
+          <button type="button" onClick={() => goTo("/")} aria-label="Go to home" className="flex min-w-0 shrink-0 cursor-pointer items-center">
+            <Image src="/logo-2.png" alt="ShopMind Logo" width={220} height={55} priority className="h-auto w-35 object-contain sm:w-50 md:w-43.75 lg:w-50" />
+          </button>
+
+          <div className="flex shrink-0 items-center">
+            {user && isNormalUser && (
+              <div className="flex items-center gap-5 sm:gap-8 md:gap-8">
+                <div className="hidden sm:block">
+                  <IconButton icon={<AiOutlineProduct size={25} />} label="Products" onClick={() => goTo("/products")} />
+                </div>
+
+                <div className="hidden sm:block">
+                  <IconButton icon={<FiPhoneCall size={20} />} label="Call" onClick={handleCall} />
+                </div>
+
+                <div className="hidden sm:block">
+                  <IconButton icon={<LuShoppingCart size={23} />} label="Shopping Cart" onClick={() => goTo("/addCard")} />
+                </div>
+
+                <div ref={profileRef} className="relative">
+                  <IconButton icon={<LuCircleUserRound size={24} />} label="User Profile" onClick={() => setProfileOpen((prev) => !prev)} />
+                  <ProfileDropdown />
+                </div>
+
+                <div className="sm:hidden">
+                  <IconButton icon={mobileOpen ? <LuX size={23} className="text-red-500" /> : <HiMiniBars3 size={24} />} label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => { setProfileOpen(false); setMobileOpen((prev) => !prev); }} />
+                </div>
+              </div>
+            )}
+
+            {user && (isVendor || isAdmin) && (
+              <div className="flex items-center gap-0.5 sm:gap-1 md:gap-8">
+                <IconButton icon={<FiPhoneCall size={20} />} label="Call" onClick={handleCall} />
+
+                <div ref={profileRef} className="relative">
+                  <IconButton icon={<LuCircleUserRound size={23} />} label="User Profile" onClick={() => setProfileOpen((prev) => !prev)} />
+                  <ProfileDropdown />
+                </div>
+
+                <div className="sm:hidden">
+                  <IconButton icon={mobileOpen ? <LuX size={23} className="text-red-500" /> : <HiMiniBars3 size={24} />} label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => { setProfileOpen(false); setMobileOpen((prev) => !prev); }} />
+                </div>
+              </div>
+            )}
+
+            {!user && (
+              <div className="flex items-center gap-0.5 sm:gap-1 md:gap-2">
+                <IconButton icon={<FiPhoneCall size={20} />} label="Call" onClick={handleCall} />
+
+                <div ref={profileRef} className="relative">
+                  <IconButton icon={<LuCircleUserRound size={23} />} label="Login" onClick={() => setProfileOpen((prev) => !prev)} />
+                  <ProfileDropdown />
+                </div>
+
+                <div className="sm:hidden">
+                  <IconButton icon={mobileOpen ? <LuX size={23} className="text-red-500" /> : <HiMiniBars3 size={24} />} label={mobileOpen ? "Close menu" : "Open menu"} onClick={() => { setProfileOpen(false); setMobileOpen((prev) => !prev); }} />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </nav>
+
+      <MobileSidebar />
+    </>
   );
 };
 

@@ -339,7 +339,7 @@ const page = () => {
             transition={{
               duration: 0.4,
             }}
-            className="flex min-h-105 flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-center shadow-sm"
+            className="flex min-h-105 flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white px-5 text-center shadow-sm m-2 sm:m-8"
           >
             <motion.div
               animate={{
