@@ -24,7 +24,6 @@ const AdminDashBoard = () => {
   const bar = [
     { id: 1, name: "Dashboard", icon: <LuLayoutGrid /> },
     { id: 2, name: "Vendor Details", icon: <FaStore /> },
-    { id: 3, name: "User Orders", icon: <BsBag /> },
     { id: 4, name: "Vendor Approval", icon: <MdVerified /> },
     { id: 5, name: "Product Requests", icon: <BsBoxSeam /> },
   ];
