@@ -9,31 +9,64 @@ export async function GET() {
 
     const session = await auth();
 
-    if (!session) {
+    if (!session?.user?.email) {
       return NextResponse.json(
-        {success: false, message: "Unauthorized"},
-        { status: 401 },
+        {
+          success: false,
+          message: "Unauthorized. Please login first.",
+        },
+        {
+          status: 401,
+        }
       );
     }
 
-    const products = await Product.find({ isActive: true });
+    const products = await Product.find({
+      isActive: true,
+    })
+      .sort({
+        createdAt: -1,
+      })
+    .lean();
 
-    if (products.length === 0) {
+    if (!products || products.length === 0) {
       return NextResponse.json(
-        {success: false, message: "Products don't exist"},
-        { status: 404 },
+        {
+          success: true,
+          message: "No active products found.",
+          data: [],
+        },
+        {
+          status: 200,
+        }
       );
     }
 
     return NextResponse.json(
-      {success: true, data : products},
-      { status: 200 },
+      {
+        success: true,
+        message: "Products fetched successfully.",
+        count: products.length,
+        data: products,
+      },
+      {
+        status: 200,
+      }
     );
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error(
+      "ERROR FETCHING PRODUCTS:",
+      error
+    );
+
     return NextResponse.json(
-      {success: false, message: "Internal server error"},
-      { status: 500 },
+      {
+        success: false,
+        message: "Internal server error.",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
