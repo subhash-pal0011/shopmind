@@ -7,14 +7,9 @@ import { NextResponse } from "next/server";
 
 export async function POST(req) {
   try {
-    // =====================================================
-    // DATABASE CONNECTION
-    // =====================================================
+
     await connectDb();
 
-    // =====================================================
-    // AUTH CHECK
-    // =====================================================
     const session = await auth();
 
     if (!session?.user?.email) {
@@ -27,9 +22,6 @@ export async function POST(req) {
       );
     }
 
-    // =====================================================
-    // FIND USER
-    // =====================================================
     const user = await User.findOne({
       email: session.user.email,
     });
@@ -44,9 +36,6 @@ export async function POST(req) {
       );
     }
 
-    // =====================================================
-    // REQUEST BODY
-    // =====================================================
     const body = await req.json();
 
     const {
@@ -59,9 +48,7 @@ export async function POST(req) {
       totalAmount,
     } = body;
 
-    // =====================================================
-    // PRODUCTS VALIDATION
-    // =====================================================
+   
     if (!Array.isArray(products) || products.length === 0) {
       return NextResponse.json(
         {
@@ -72,9 +59,7 @@ export async function POST(req) {
       );
     }
 
-    // =====================================================
-    // ADDRESS VALIDATION
-    // =====================================================
+
     if (!address || typeof address !== "object") {
       return NextResponse.json(
         {
@@ -102,9 +87,7 @@ export async function POST(req) {
       );
     }
 
-    // =====================================================
-    // LOCATION VALIDATION
-    // =====================================================
+
     if (!location || typeof location !== "object") {
       return NextResponse.json(
         {
@@ -128,9 +111,6 @@ export async function POST(req) {
       );
     }
 
-    // =====================================================
-    // PAYMENT METHOD VALIDATION
-    // =====================================================
     if (paymentMethod !== "cod") {
       return NextResponse.json(
         {
@@ -141,9 +121,7 @@ export async function POST(req) {
       );
     }
 
-    // =====================================================
-    // AMOUNT VALIDATION
-    // =====================================================
+
     if (
       typeof subtotal !== "number" ||
       typeof totalAmount !== "number"
@@ -160,9 +138,7 @@ export async function POST(req) {
     const finalDeliveryCharge =
       typeof deliveryCharge === "number" ? deliveryCharge : 0;
 
-    // =====================================================
-    // PRODUCT VALIDATION
-    // =====================================================
+
     const formattedProducts = products.map((item) => {
       if (!item.productId) {
         throw new Error("Product ID is missing");
@@ -190,9 +166,7 @@ export async function POST(req) {
       };
     });
 
-    // =====================================================
-    // CREATE ORDER
-    // =====================================================
+   
     const order = await Order.create({
       userId: user._id,
 
@@ -226,9 +200,7 @@ export async function POST(req) {
       paymentStatus: "pending",
     });
 
-    // =====================================================
-    // SAVE ORDER ID IN USER
-    // =====================================================
+
     await User.findByIdAndUpdate(
       user._id,
       {
@@ -241,14 +213,10 @@ export async function POST(req) {
       }
     );
 
-    // =====================================================
-    // REAL-TIME ORDER EVENT
-    // =====================================================
+
     eventHandler("product-order", order);
 
-    // =====================================================
-    // SUCCESS RESPONSE
-    // =====================================================
+   
     return NextResponse.json(
       {
         success: true,
