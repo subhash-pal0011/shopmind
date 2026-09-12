@@ -1,6 +1,6 @@
 "use client";
-
 import React, {
+  Suspense,
   useEffect,
   useMemo,
   useState,
@@ -45,7 +45,10 @@ const publishableKey =
 
 /*
   IMPORTANT:
-  This key MUST start with pk_test_ or pk_live_
+  This key must start with:
+
+  pk_test_   -> Testing
+  pk_live_   -> Production
 */
 
 const stripePromise = publishableKey
@@ -126,6 +129,7 @@ function PaymentForm({
         Stripe will process the payment.
 
         After successful payment Stripe redirects to:
+
         /payment/success?orderId=...
       */
 
@@ -147,9 +151,9 @@ function PaymentForm({
         result
       );
 
-      /*
-        If Stripe returns an error
-      */
+      /* ===================================================
+         STRIPE ERROR
+      =================================================== */
 
       if (result?.error) {
         console.error(
@@ -170,10 +174,9 @@ function PaymentForm({
         return;
       }
 
-      /*
-        Some payment methods may complete without
-        a redirect.
-      */
+      /* ===================================================
+         PAYMENT SUCCESS
+      =================================================== */
 
       if (
         result?.paymentIntent?.status ===
@@ -191,6 +194,10 @@ function PaymentForm({
 
         return;
       }
+
+      /* ===================================================
+         PAYMENT PROCESSING
+      =================================================== */
 
       if (
         result?.paymentIntent?.status ===
@@ -270,8 +277,9 @@ function PaymentForm({
       onSubmit={handleSubmit}
       className="space-y-6"
     >
+
       {/* ===============================================
-          STRIPE PAYMENT ELEMENT
+          STRIPE PAYMENT CARD
       =============================================== */}
 
       <motion.div
@@ -288,9 +296,11 @@ function PaymentForm({
         }}
         className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
       >
+
         {/* Header */}
 
         <div className="mb-5 flex items-center gap-3">
+
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50">
             <CreditCard
               className="text-blue-600"
@@ -299,6 +309,7 @@ function PaymentForm({
           </div>
 
           <div>
+
             <h2 className="text-lg font-bold text-slate-900">
               Payment Details
             </h2>
@@ -306,7 +317,9 @@ function PaymentForm({
             <p className="text-sm text-slate-500">
               Enter your payment information
             </p>
+
           </div>
+
         </div>
 
 
@@ -315,12 +328,14 @@ function PaymentForm({
         {!paymentReady &&
           !paymentElementError && (
             <div className="mb-5 flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
+
               <Loader2
                 size={20}
                 className="animate-spin text-blue-600"
               />
 
               <div>
+
                 <p className="text-sm font-semibold text-blue-800">
                   Loading payment form...
                 </p>
@@ -328,7 +343,9 @@ function PaymentForm({
                 <p className="text-xs text-blue-600">
                   Please wait a moment.
                 </p>
+
               </div>
+
             </div>
           )}
 
@@ -336,6 +353,7 @@ function PaymentForm({
         {/* Stripe Element */}
 
         <div className="min-h-[180px]">
+
           <PaymentElement
             options={{
               layout: "tabs",
@@ -347,12 +365,14 @@ function PaymentForm({
               handlePaymentElementLoadError
             }
           />
+
         </div>
 
 
         {/* Payment Element Error */}
 
         <AnimatePresence>
+
           {paymentElementError && (
             <motion.div
               initial={{
@@ -369,13 +389,16 @@ function PaymentForm({
               }}
               className="mt-5 overflow-hidden"
             >
+
               <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+
                 <AlertCircle
                   size={20}
                   className="mt-0.5 shrink-0 text-red-600"
                 />
 
                 <div>
+
                   <p className="text-sm font-semibold text-red-800">
                     Payment Error
                   </p>
@@ -383,43 +406,56 @@ function PaymentForm({
                   <p className="mt-1 text-sm text-red-600">
                     {paymentElementError}
                   </p>
+
                 </div>
+
               </div>
+
             </motion.div>
           )}
+
         </AnimatePresence>
 
 
         {/* Security */}
 
         <div className="mt-6 flex flex-wrap gap-4 border-t border-slate-100 pt-5">
+
           <div className="flex items-center gap-2 text-xs text-slate-500">
+
             <Lock
               size={15}
               className="text-green-600"
             />
 
             Secure payment
+
           </div>
 
           <div className="flex items-center gap-2 text-xs text-slate-500">
+
             <ShieldCheck
               size={15}
               className="text-green-600"
             />
 
             SSL encrypted
+
           </div>
 
           <div className="flex items-center gap-2 text-xs text-slate-500">
+
             <CheckCircle2
               size={15}
               className="text-green-600"
             />
 
             Stripe secured
+
           </div>
+
         </div>
+
       </motion.div>
 
 
@@ -460,6 +496,7 @@ function PaymentForm({
             : "cursor-pointer bg-blue-600 shadow-lg shadow-blue-200 hover:bg-blue-700"
         }`}
       >
+
         {loading ? (
           <>
             <Loader2
@@ -479,34 +516,59 @@ function PaymentForm({
             )}
           </>
         )}
+
       </motion.button>
 
 
       {/* Bottom message */}
 
       <p className="text-center text-xs leading-5 text-slate-500">
+
         Your payment is securely processed by Stripe.
+
         <br />
+
         We do not store your card details.
+
       </p>
+
     </form>
   );
 }
 
 
 /* =========================================================
-   MAIN PAYMENT PAGE
+   MAIN PAYMENT PAGE CONTENT
 ========================================================= */
 
-export default function PaymentPage() {
+function PaymentPageContent() {
+
+  /*
+    IMPORTANT:
+
+    useSearchParams() is now inside a component
+    which is rendered inside Suspense.
+
+    This fixes the Next.js production prerender error.
+  */
+
   const searchParams =
     useSearchParams();
 
   const router = useRouter();
 
+
+  /* =======================================================
+     GET ORDER ID
+  ======================================================= */
+
   const orderId =
     searchParams.get("orderId");
 
+
+  /* =======================================================
+     STATES
+  ======================================================= */
 
   const [clientSecret, setClientSecret] =
     useState("");
@@ -526,10 +588,12 @@ export default function PaymentPage() {
   ======================================================= */
 
   useEffect(() => {
+
     const getPaymentDetails =
       async () => {
 
         if (!orderId) {
+
           setError(
             "Order ID is missing."
           );
@@ -539,14 +603,19 @@ export default function PaymentPage() {
           return;
         }
 
+
         try {
+
           setLoading(true);
+
           setError("");
+
 
           console.log(
             "GET PAYMENT DETAILS FOR ORDER:",
             orderId
           );
+
 
           const res =
             await axios.get(
@@ -555,23 +624,29 @@ export default function PaymentPage() {
               )}`
             );
 
+
           console.log(
             "PAYMENT API RESPONSE:",
             res.data
           );
 
+
           if (
             !res.data?.success
           ) {
+
             throw new Error(
               res.data?.message ||
                 "Unable to load payment."
             );
+
           }
+
 
           if (
             !res.data?.clientSecret
           ) {
+
             console.error(
               "CLIENT SECRET MISSING:",
               res.data
@@ -580,11 +655,14 @@ export default function PaymentPage() {
             throw new Error(
               "Stripe client secret is missing."
             );
+
           }
+
 
           setClientSecret(
             res.data.clientSecret
           );
+
 
           setAmount(
             Number(
@@ -593,21 +671,27 @@ export default function PaymentPage() {
           );
 
         } catch (error) {
+
           console.error(
             "GET PAYMENT DETAILS ERROR:",
             error
           );
+
 
           const message =
             error?.response?.data?.message ||
             error?.message ||
             "Unable to load payment.";
 
+
           setError(message);
 
         } finally {
+
           setLoading(false);
+
         }
+
       };
 
 
@@ -621,7 +705,9 @@ export default function PaymentPage() {
   ======================================================= */
 
   const handleRetry = () => {
+
     window.location.reload();
+
   };
 
 
@@ -635,42 +721,63 @@ export default function PaymentPage() {
       return undefined;
     }
 
+
     return {
+
       clientSecret,
 
       appearance: {
+
         theme: "stripe",
 
         variables: {
+
           colorPrimary: "#2563eb",
+
           colorBackground: "#ffffff",
+
           colorText: "#0f172a",
+
           colorDanger: "#dc2626",
 
           borderRadius: "12px",
 
           fontFamily:
             '"Inter", "Segoe UI", system-ui, sans-serif',
+
         },
 
+
         rules: {
+
           ".Input": {
+
             padding: "13px 14px",
 
             boxShadow:
               "0 0 0 1px #e2e8f0",
+
           },
+
 
           ".Input:focus": {
+
             boxShadow:
               "0 0 0 2px #2563eb",
+
           },
 
+
           ".Label": {
+
             fontWeight: "600",
+
           },
+
         },
+
       },
+
     };
 
   }, [clientSecret]);
@@ -681,24 +788,32 @@ export default function PaymentPage() {
   ======================================================= */
 
   if (!orderId) {
+
     return (
+
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+
         <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-8 text-center shadow-lg">
 
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50">
+
             <AlertCircle
               size={28}
               className="text-red-600"
             />
+
           </div>
+
 
           <h1 className="text-xl font-bold text-slate-900">
             Invalid Payment Link
           </h1>
 
+
           <p className="mt-2 text-sm text-slate-500">
             Order ID is missing from the payment URL.
           </p>
+
 
           <button
             type="button"
@@ -711,8 +826,11 @@ export default function PaymentPage() {
           </button>
 
         </div>
+
       </main>
+
     );
+
   }
 
 
@@ -721,43 +839,57 @@ export default function PaymentPage() {
   ======================================================= */
 
   if (!publishableKey) {
+
     return (
+
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+
         <div className="w-full max-w-lg rounded-2xl border border-red-200 bg-white p-8 shadow-lg">
 
           <div className="flex items-start gap-4">
 
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50">
+
               <AlertCircle
                 size={25}
                 className="text-red-600"
               />
+
             </div>
 
+
             <div>
+
               <h1 className="text-xl font-bold text-slate-900">
                 Stripe Configuration Error
               </h1>
+
 
               <p className="mt-2 text-sm leading-6 text-slate-600">
                 Stripe publishable key is missing.
               </p>
 
+
               <p className="mt-3 rounded-lg bg-slate-100 p-3 font-mono text-xs text-slate-700">
                 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
               </p>
 
+
               <p className="mt-3 text-sm text-slate-500">
-                Add the key to your .env.local file and
-                restart the Next.js server.
+                Add the key to your deployment environment
+                variables and redeploy the application.
               </p>
+
             </div>
 
           </div>
 
         </div>
+
       </main>
+
     );
+
   }
 
 
@@ -766,7 +898,9 @@ export default function PaymentPage() {
   ======================================================= */
 
   if (loading) {
+
     return (
+
       <main className="min-h-screen bg-slate-50">
 
         <div className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4">
@@ -782,9 +916,11 @@ export default function PaymentPage() {
 
             </div>
 
+
             <h1 className="mt-5 text-xl font-bold text-slate-900">
               Loading Payment
             </h1>
+
 
             <p className="mt-2 text-sm text-slate-500">
               Preparing your secure payment...
@@ -795,7 +931,9 @@ export default function PaymentPage() {
         </div>
 
       </main>
+
     );
+
   }
 
 
@@ -804,7 +942,9 @@ export default function PaymentPage() {
   ======================================================= */
 
   if (error) {
+
     return (
+
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
 
         <motion.div
@@ -830,9 +970,11 @@ export default function PaymentPage() {
 
             </div>
 
+
             <h1 className="mt-5 text-2xl font-bold text-slate-900">
               Unable to Load Payment
             </h1>
+
 
             <p className="mt-3 text-sm leading-6 text-slate-600">
               {error}
@@ -846,10 +988,13 @@ export default function PaymentPage() {
                 onClick={handleRetry}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700"
               >
+
                 <RefreshCcw size={18} />
 
                 Retry
+
               </button>
+
 
               <button
                 type="button"
@@ -868,7 +1013,9 @@ export default function PaymentPage() {
         </motion.div>
 
       </main>
+
     );
+
   }
 
 
@@ -877,7 +1024,9 @@ export default function PaymentPage() {
   ======================================================= */
 
   if (!clientSecret) {
+
     return (
+
       <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
 
         <div className="w-full max-w-lg rounded-2xl border border-red-200 bg-white p-8 text-center shadow-lg">
@@ -887,28 +1036,35 @@ export default function PaymentPage() {
             className="mx-auto text-red-600"
           />
 
+
           <h1 className="mt-4 text-xl font-bold text-slate-900">
             Payment Session Not Found
           </h1>
 
+
           <p className="mt-2 text-sm text-slate-500">
             Stripe payment session could not be created.
           </p>
+
 
           <button
             type="button"
             onClick={handleRetry}
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
           >
+
             <RefreshCcw size={18} />
 
             Try Again
+
           </button>
 
         </div>
 
       </main>
+
     );
+
   }
 
 
@@ -917,6 +1073,7 @@ export default function PaymentPage() {
   ======================================================= */
 
   return (
+
     <main className="min-h-screen bg-slate-50">
 
       {/* =================================================
@@ -934,9 +1091,11 @@ export default function PaymentPage() {
             }
             className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-blue-600"
           >
+
             <ArrowLeft size={18} />
 
             Back
+
           </button>
 
 
@@ -950,6 +1109,7 @@ export default function PaymentPage() {
               />
 
             </div>
+
 
             <span className="text-lg font-bold text-slate-900">
               Secure Checkout
@@ -995,9 +1155,11 @@ export default function PaymentPage() {
             Checkout
           </p>
 
+
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
             Complete Your Payment
           </h1>
+
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
             Your payment information is encrypted and securely
@@ -1021,10 +1183,12 @@ export default function PaymentPage() {
               stripe={stripePromise}
               options={options}
             >
+
               <PaymentForm
                 orderId={orderId}
                 amount={amount}
               />
+
             </Elements>
 
           </div>
@@ -1067,11 +1231,13 @@ export default function PaymentPage() {
 
                   </div>
 
+
                   <div>
 
                     <h2 className="font-bold text-slate-900">
                       Order Summary
                     </h2>
+
 
                     <p className="text-xs text-slate-500">
                       Order #{orderId}
@@ -1113,13 +1279,16 @@ export default function PaymentPage() {
                     Order Amount
                   </span>
 
+
                   <span className="font-semibold text-slate-900">
+
                     ₹
                     {Number(
                       amount || 0
                     ).toLocaleString(
                       "en-IN"
                     )}
+
                   </span>
 
                 </div>
@@ -1130,6 +1299,7 @@ export default function PaymentPage() {
                   <span className="text-slate-500">
                     Delivery
                   </span>
+
 
                   <span className="font-semibold text-green-600">
                     Free
@@ -1148,11 +1318,13 @@ export default function PaymentPage() {
                         Total Amount
                       </p>
 
+
                       <p className="mt-1 text-xs text-slate-400">
                         Inclusive of applicable charges
                       </p>
 
                     </div>
+
 
                     <p className="text-2xl font-extrabold text-slate-900">
 
@@ -1205,11 +1377,13 @@ export default function PaymentPage() {
 
                 </div>
 
+
                 <div>
 
                   <h3 className="text-sm font-bold text-green-900">
                     Safe & Secure Payment
                   </h3>
+
 
                   <p className="mt-1 text-xs leading-5 text-green-700">
                     Your card information is securely handled
@@ -1230,5 +1404,56 @@ export default function PaymentPage() {
       </div>
 
     </main>
+
+  );
+}
+
+
+/* =========================================================
+   PAYMENT PAGE
+   IMPORTANT FOR NEXT.JS PRERENDER
+========================================================= */
+
+export default function PaymentPage() {
+
+  return (
+
+    <Suspense
+      fallback={
+
+        <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+
+          <div className="text-center">
+
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
+
+              <Loader2
+                size={32}
+                className="animate-spin text-blue-600"
+              />
+
+            </div>
+
+
+            <h1 className="mt-5 text-xl font-bold text-slate-900">
+              Loading Payment
+            </h1>
+
+
+            <p className="mt-2 text-sm text-slate-500">
+              Preparing your secure payment...
+            </p>
+
+          </div>
+
+        </main>
+
+      }
+    >
+
+      <PaymentPageContent />
+
+    </Suspense>
+
   );
 }
