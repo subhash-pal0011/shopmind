@@ -958,27 +958,27 @@ const ProductPage = () => {
       // ONLINE PAYMENT
       // =========================
       if (paymentMethod === "online") {
-        const res = await axios.post("/api/user/order/online", orderData);
+        // const res = await axios.post("/api/user/order/online", orderData);
 
-        console.log("ONLINE PAYMENT RESPONSE:", res.data);
+        console.log("ONLINE PAYMENT RESPONSE:", orderData);
 
-        if (res.data?.success) {
-          toast.success(res.data?.message || "Payment initiated successfully");
+        // if (res.data?.success) {
+        //   toast.success(res.data?.message || "Payment initiated successfully");
 
-          if (res.data?.paymentUrl) {
-            window.location.href = res.data.paymentUrl;
-            return;
-          }
+        //   if (res.data?.paymentUrl) {
+        //     window.location.href = res.data.paymentUrl;
+        //     return;
+        //   }
 
-          if (res.data?.orderId) {
-            window.location.href = `/payment?orderId=${res.data.orderId}`;
-            return;
-          }
+        //   if (res.data?.orderId) {
+        //     window.location.href = `/payment?orderId=${res.data.orderId}`;
+        //     return;
+        //   }
 
-          return;
-        }
+        //   return;
+        // }
 
-        toast.error(res.data?.message || "Unable to initiate online payment");
+        // toast.error(res.data?.message || "Unable to initiate online payment");
 
         return;
       }
