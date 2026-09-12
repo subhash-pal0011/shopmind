@@ -474,17 +474,12 @@ const page = () => {
       // ONLINE PAYMENT
       // =========================
       if (paymentMethod === "online") {
-        // Abhi online payment ka API yaha call karna hai.
-        // Example:
-        //
-        // const res = await axios.post(
-        //   "/api/user/order/online",
-        //   orderData
-        // );
-        //
-        // Payment gateway open karna hai.
 
-        console.log("ONLINE ORDER:", orderData);
+        const res = await axios.post("/api/user/order/online",  orderData);
+        if(res.data.success){
+          toast.success(res.data.message)
+          router.push(`/payment?orderId=${res.data.orderId}`);
+        }
 
         return;
       }
