@@ -251,13 +251,13 @@ export default function RegisterPage() {
                       {isSubmitting ? <img src="/Loading.gif" className="h-8 bg-cover" /> : show ? "Sign Up" : "Login"}
                     </button>
 
-                    <button
+                    {/* <button
                       type="button"
                       onClick={() => setOtpPage(!otpPage)}
                       className="block mx-auto text-sm text-sky-500 hover:underline cursor-pointer"
                     >
                       Go to OTP Page
-                    </button>
+                    </button> */}
                   </div>
 
                 </form>
