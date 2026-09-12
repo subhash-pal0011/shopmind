@@ -16,7 +16,7 @@ const Slider = () => {
               },
               {
                      id: 2,
-                     img: "/shose.jpg",
+                     img: "/shoesImg4.jpg",
                      title: "Premium Footwear",
                      description:
                             "Step into comfort and style with our collection of trendy sneakers, casual shoes, and premium footwear.",
