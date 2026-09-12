@@ -1,6 +1,6 @@
 "use client";
+
 import React, {
-  Suspense,
   useEffect,
   useMemo,
   useState,
@@ -9,7 +9,7 @@ import React, {
 import Image from "next/image";
 import axios from "axios";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import {
   Elements,
@@ -32,9 +32,13 @@ import {
   RefreshCcw,
 } from "lucide-react";
 
-import { motion, AnimatePresence } from "motion/react";
+import {
+  motion,
+  AnimatePresence,
+} from "motion/react";
 
 import { toast } from "sonner";
+
 
 /* =========================================================
    STRIPE PUBLISHABLE KEY
@@ -45,10 +49,7 @@ const publishableKey =
 
 /*
   IMPORTANT:
-  This key must start with:
-
-  pk_test_   -> Testing
-  pk_live_   -> Production
+  This key MUST start with pk_test_ or pk_live_
 */
 
 const stripePromise = publishableKey
@@ -69,10 +70,15 @@ function PaymentForm({
 
   const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
-  const [paymentReady, setPaymentReady] = useState(false);
+  const [loading, setLoading] =
+    useState(false);
+
+  const [paymentReady, setPaymentReady] =
+    useState(false);
+
   const [paymentElementError, setPaymentElementError] =
     useState("");
+
 
   /* =======================================================
      PAYMENT SUBMIT
@@ -125,35 +131,30 @@ function PaymentForm({
       setLoading(true);
       setPaymentElementError("");
 
-      /*
-        Stripe will process the payment.
+      const result =
+        await stripe.confirmPayment({
+          elements,
 
-        After successful payment Stripe redirects to:
+          confirmParams: {
+            return_url:
+              `${window.location.origin}/payment/success?orderId=${encodeURIComponent(
+                orderId
+              )}`,
+          },
 
-        /payment/success?orderId=...
-      */
+          redirect: "if_required",
+        });
 
-      const result = await stripe.confirmPayment({
-        elements,
-
-        confirmParams: {
-          return_url:
-            `${window.location.origin}/payment/success?orderId=${encodeURIComponent(
-              orderId
-            )}`,
-        },
-
-        redirect: "if_required",
-      });
 
       console.log(
         "STRIPE PAYMENT RESULT:",
         result
       );
 
-      /* ===================================================
+
+      /* ===============================================
          STRIPE ERROR
-      =================================================== */
+      =============================================== */
 
       if (result?.error) {
         console.error(
@@ -174,9 +175,10 @@ function PaymentForm({
         return;
       }
 
-      /* ===================================================
+
+      /* ===============================================
          PAYMENT SUCCESS
-      =================================================== */
+      =============================================== */
 
       if (
         result?.paymentIntent?.status ===
@@ -195,9 +197,10 @@ function PaymentForm({
         return;
       }
 
-      /* ===================================================
+
+      /* ===============================================
          PAYMENT PROCESSING
-      =================================================== */
+      =============================================== */
 
       if (
         result?.paymentIntent?.status ===
@@ -215,6 +218,7 @@ function PaymentForm({
 
         return;
       }
+
 
       setLoading(false);
 
@@ -247,6 +251,7 @@ function PaymentForm({
     );
 
     setPaymentReady(true);
+
     setPaymentElementError("");
   };
 
@@ -268,9 +273,14 @@ function PaymentForm({
       "Unable to load Stripe payment form.";
 
     setPaymentElementError(message);
+
     setPaymentReady(false);
   };
 
+
+  /* =======================================================
+     UI
+  ======================================================= */
 
   return (
     <form
@@ -279,7 +289,7 @@ function PaymentForm({
     >
 
       {/* ===============================================
-          STRIPE PAYMENT CARD
+          STRIPE PAYMENT ELEMENT
       =============================================== */}
 
       <motion.div
@@ -302,11 +312,14 @@ function PaymentForm({
         <div className="mb-5 flex items-center gap-3">
 
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50">
+
             <CreditCard
               className="text-blue-600"
               size={22}
             />
+
           </div>
+
 
           <div>
 
@@ -327,6 +340,7 @@ function PaymentForm({
 
         {!paymentReady &&
           !paymentElementError && (
+
             <div className="mb-5 flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4">
 
               <Loader2
@@ -347,6 +361,7 @@ function PaymentForm({
               </div>
 
             </div>
+
           )}
 
 
@@ -374,6 +389,7 @@ function PaymentForm({
         <AnimatePresence>
 
           {paymentElementError && (
+
             <motion.div
               initial={{
                 opacity: 0,
@@ -412,6 +428,7 @@ function PaymentForm({
               </div>
 
             </motion.div>
+
           )}
 
         </AnimatePresence>
@@ -432,6 +449,7 @@ function PaymentForm({
 
           </div>
 
+
           <div className="flex items-center gap-2 text-xs text-slate-500">
 
             <ShieldCheck
@@ -442,6 +460,7 @@ function PaymentForm({
             SSL encrypted
 
           </div>
+
 
           <div className="flex items-center gap-2 text-xs text-slate-500">
 
@@ -498,6 +517,7 @@ function PaymentForm({
       >
 
         {loading ? (
+
           <>
             <Loader2
               size={21}
@@ -506,7 +526,9 @@ function PaymentForm({
 
             Processing Payment...
           </>
+
         ) : (
+
           <>
             <Lock size={20} />
 
@@ -515,6 +537,7 @@ function PaymentForm({
               "en-IN"
             )}
           </>
+
         )}
 
       </motion.button>
@@ -538,37 +561,15 @@ function PaymentForm({
 
 
 /* =========================================================
-   MAIN PAYMENT PAGE CONTENT
+   MAIN PAYMENT CLIENT
 ========================================================= */
 
-function PaymentPageContent() {
-
-  /*
-    IMPORTANT:
-
-    useSearchParams() is now inside a component
-    which is rendered inside Suspense.
-
-    This fixes the Next.js production prerender error.
-  */
-
-  const searchParams =
-    useSearchParams();
+export default function PaymentClient({
+  orderId,
+}) {
 
   const router = useRouter();
 
-
-  /* =======================================================
-     GET ORDER ID
-  ======================================================= */
-
-  const orderId =
-    searchParams.get("orderId");
-
-
-  /* =======================================================
-     STATES
-  ======================================================= */
 
   const [clientSecret, setClientSecret] =
     useState("");
@@ -705,9 +706,7 @@ function PaymentPageContent() {
   ======================================================= */
 
   const handleRetry = () => {
-
     window.location.reload();
-
   };
 
 
@@ -830,7 +829,6 @@ function PaymentPageContent() {
       </main>
 
     );
-
   }
 
 
@@ -876,8 +874,8 @@ function PaymentPageContent() {
 
 
               <p className="mt-3 text-sm text-slate-500">
-                Add the key to your deployment environment
-                variables and redeploy the application.
+                Add the key to your .env.local file and
+                restart the Next.js server.
               </p>
 
             </div>
@@ -1404,56 +1402,6 @@ function PaymentPageContent() {
       </div>
 
     </main>
-
-  );
-}
-
-
-/* =========================================================
-   PAYMENT PAGE
-   IMPORTANT FOR NEXT.JS PRERENDER
-========================================================= */
-
-export default function PaymentPage() {
-
-  return (
-
-    <Suspense
-      fallback={
-
-        <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-
-          <div className="text-center">
-
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
-
-              <Loader2
-                size={32}
-                className="animate-spin text-blue-600"
-              />
-
-            </div>
-
-
-            <h1 className="mt-5 text-xl font-bold text-slate-900">
-              Loading Payment
-            </h1>
-
-
-            <p className="mt-2 text-sm text-slate-500">
-              Preparing your secure payment...
-            </p>
-
-          </div>
-
-        </main>
-
-      }
-    >
-
-      <PaymentPageContent />
-
-    </Suspense>
 
   );
 }
