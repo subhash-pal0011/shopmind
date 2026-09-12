@@ -112,13 +112,7 @@ const orderSchema = new mongoose.Schema(
 
     orderStatus: {
       type: String,
-      enum: [
-        "pending",
-        "confirmed",
-        "shipped",
-        "delivered",
-        "cancelled",
-      ],
+      enum: ["pending", "confirmed", "shipped", "delivered", "cancelled"],
       default: "pending",
     },
 
@@ -127,10 +121,16 @@ const orderSchema = new mongoose.Schema(
       enum: ["pending", "paid", "failed"],
       default: "pending",
     },
+
+    stripePaymentIntentId: {
+      type: String,
+      default: null,
+      index: true,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
 export default Order;
