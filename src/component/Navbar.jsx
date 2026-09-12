@@ -1,11 +1,9 @@
 "use client";
-
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { AnimatePresence, motion } from "motion/react";
-
 import { FiPhoneCall } from "react-icons/fi";
 import { LuCircleUserRound, LuShoppingCart, LuX } from "react-icons/lu";
 import { HiMiniBars3 } from "react-icons/hi2";
@@ -126,8 +124,8 @@ const Navbar = ({ user = null }) => {
                 <p className="mt-1 text-xs leading-5 text-gray-500">Login to manage your account and orders.</p>
               </div>
 
-              <ProfileButton icon={<PiSignIn size={18} />} label="Login" onClick={() => goTo("/login")} />
-              <ProfileButton icon={<LuCircleUserRound size={18} />} label="Create Account" onClick={() => goTo("/register")} />
+              {/* <ProfileButton icon={<PiSignIn size={18} />} label="Login" onClick={() => goTo("/login")} /> */}
+              <ProfileButton icon={<LuCircleUserRound size={18} />} label="Login/Register" onClick={() => goTo("/register")} />
             </>
           )}
         </motion.div>
@@ -216,8 +214,8 @@ const Navbar = ({ user = null }) => {
 
                   <div className="space-y-1.5">
                     <MobileMenuItem icon={<FiPhoneCall size={20} />} label="Call" onClick={handleCall} />
-                    <MobileMenuItem icon={<PiSignIn size={20} />} label="Login" primary onClick={() => goTo("/login")} />
-                    <MobileMenuItem icon={<LuCircleUserRound size={20} />} label="Create Account" onClick={() => goTo("/register")} />
+                    {/* <MobileMenuItem icon={<PiSignIn size={20} />} label="Login" primary onClick={() => goTo("/login")} /> */}
+                    <MobileMenuItem icon={<LuCircleUserRound size={20} />} label="Login/Register" onClick={() => goTo("/register")} />
                   </div>
                 </>
               )}
