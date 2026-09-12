@@ -34,11 +34,15 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 const ProductPage = () => {
   const allProductForUser = useSelector(
     (state) => state.vendorUser?.allProductForUser || [],
   );
+
+  const router = useRouter();
+
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const [placingOrder, setPlacingOrder] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -61,10 +65,7 @@ const ProductPage = () => {
   const [addressLoading, setAddressLoading] = useState(false);
   const [showOrderPlace, setShowOrderPlace] = useState(false);
 
-  // =========================================================
-  // EMBEDDED PRODUCT REVIEW
-  // Delivered order -> review popup -> submit OR auto hide
-  // =========================================================
+
   const REVIEW_SNOOZE_TIME = 60 * 60 * 1000; // 1 hour
   const REVIEW_SNOOZE_KEY = "product_review_snooze";
   const [pendingReviews, setPendingReviews] = useState([]);
@@ -958,29 +959,38 @@ const ProductPage = () => {
       // ONLINE PAYMENT
       // =========================
       if (paymentMethod === "online") {
-        // const res = await axios.post("/api/user/order/online", orderData);
+        try {
+          const res = await axios.post("/api/user/order/online", orderData);
 
-        console.log("ONLINE PAYMENT RESPONSE:", orderData);
+          if (res.data?.success) {
+            toast.success(
+              res.data?.message || "Payment initiated successfully",
+            );
 
-        // if (res.data?.success) {
-        //   toast.success(res.data?.message || "Payment initiated successfully");
+            if (res.data?.orderId) {
+              router.push(`/payment?orderId=${res.data.orderId}`);
 
-        //   if (res.data?.paymentUrl) {
-        //     window.location.href = res.data.paymentUrl;
-        //     return;
-        //   }
+              return;
+            }
 
-        //   if (res.data?.orderId) {
-        //     window.location.href = `/payment?orderId=${res.data.orderId}`;
-        //     return;
-        //   }
+            toast.error("Order ID not received.");
 
-        //   return;
-        // }
+            return;
+          }
 
-        // toast.error(res.data?.message || "Unable to initiate online payment");
+          toast.error(res.data?.message || "Unable to initiate online payment");
 
-        return;
+          return;
+        } catch (error) {
+          console.error("ONLINE PAYMENT ERROR:", error);
+
+          toast.error(
+            error?.response?.data?.message ||
+              "Unable to initiate online payment",
+          );
+
+          return;
+        }
       }
     } catch (error) {
       console.error("PLACE ORDER ERROR:", error);
