@@ -29,9 +29,6 @@ const Navbar = ({ user = null }) => {
 
   const userImage = user?.image || user?.profileImage || null;
 
-  /* =========================================================
-     COMMON FUNCTIONS
-  ========================================================= */
 
   const closeMenus = () => {
     setProfileOpen(false);
@@ -59,10 +56,6 @@ const Navbar = ({ user = null }) => {
     });
   };
 
-  /* =========================================================
-     OUTSIDE CLICK
-  ========================================================= */
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (profileRef.current && !profileRef.current.contains(event.target)) {
@@ -86,10 +79,6 @@ const Navbar = ({ user = null }) => {
     };
   }, []);
 
-  /* =========================================================
-     MOBILE BODY SCROLL
-  ========================================================= */
-
   useEffect(() => {
     document.body.style.overflow = mobileOpen ? "hidden" : "";
 
@@ -98,10 +87,7 @@ const Navbar = ({ user = null }) => {
     };
   }, [mobileOpen]);
 
-  /* =========================================================
-     RESIZE
-  ========================================================= */
-
+ 
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 640) {
@@ -116,10 +102,7 @@ const Navbar = ({ user = null }) => {
     };
   }, []);
 
-  /* =========================================================
-     PROFILE BUTTON
-  ========================================================= */
-
+ 
   const ProfileButton = ({ icon, label, onClick, danger = false }) => {
     return (
       <button
@@ -137,10 +120,7 @@ const Navbar = ({ user = null }) => {
     );
   };
 
-  /* =========================================================
-     PROFILE DROPDOWN
-  ========================================================= */
-
+ 
   const ProfileDropdown = () => {
     return (
       <AnimatePresence>
@@ -260,10 +240,7 @@ const Navbar = ({ user = null }) => {
     );
   };
 
-  /* =========================================================
-     ICON BUTTON
-  ========================================================= */
-
+  
   const IconButton = ({ icon, label, onClick, className = "" }) => {
     return (
       <motion.button
@@ -284,9 +261,6 @@ const Navbar = ({ user = null }) => {
     );
   };
 
-  /* =========================================================
-     MOBILE MENU ITEM
-  ========================================================= */
 
   const MobileMenuItem = ({ icon, label, onClick, danger = false }) => {
     return (
@@ -305,10 +279,6 @@ const Navbar = ({ user = null }) => {
       </motion.button>
     );
   };
-
-  /* =========================================================
-     USER INFO CARD
-  ========================================================= */
 
   const UserInfoCard = () => {
     return (
@@ -347,10 +317,6 @@ const Navbar = ({ user = null }) => {
       </div>
     );
   };
-
-  /* =========================================================
-     MOBILE SIDEBAR
-  ========================================================= */
 
   const MobileSidebar = () => {
     return (
@@ -487,18 +453,12 @@ const Navbar = ({ user = null }) => {
     );
   };
 
-  /* =========================================================
-     NAVBAR
-  ========================================================= */
-
+  
   return (
     <>
       <nav className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/95 px-3 py-2.5 shadow-sm backdrop-blur-md sm:px-4 sm:py-3">
         <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3">
-          {/* =================================================
-              LOGO
-          ================================================= */}
-
+          
           <button
             type="button"
             onClick={() => goTo("/")}
@@ -511,7 +471,7 @@ const Navbar = ({ user = null }) => {
               width={220}
               height={55}
               priority
-              className="h-auto w-[140px] object-contain sm:w-[200px] md:w-[175px] lg:w-[200px]"
+              className="h-auto w-35 object-contain sm:w-50 md:w-43.75 lg:w-50"
             />
           </button>
 
@@ -520,14 +480,7 @@ const Navbar = ({ user = null }) => {
           ================================================= */}
 
           <div className="flex shrink-0 items-center">
-            {/* =================================================
-                NOT LOGGED IN
-                -----------------------------------------------
-                IMPORTANT:
-                ONLY LuCircleUserRound
-                AT EVERY SCREEN SIZE
-            ================================================= */}
-
+            
             {!user && (
               <div ref={profileRef} className="relative">
                 <IconButton
@@ -540,10 +493,7 @@ const Navbar = ({ user = null }) => {
               </div>
             )}
 
-            {/* =================================================
-                LOGGED-IN NORMAL USER
-            ================================================= */}
-
+            
             {user && isNormalUser && (
               <div className="flex items-center gap-5 sm:gap-8 md:gap-8">
                 {/* PRODUCTS */}
@@ -609,10 +559,7 @@ const Navbar = ({ user = null }) => {
               </div>
             )}
 
-            {/* =================================================
-                VENDOR / ADMIN
-            ================================================= */}
-
+            
             {user && (isVendor || isAdmin) && (
               <div className="flex items-center gap-0.5 sm:gap-1 md:gap-8">
                 {/* CALL */}
