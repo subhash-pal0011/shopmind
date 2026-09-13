@@ -65,7 +65,6 @@ const ProductPage = () => {
   const [addressLoading, setAddressLoading] = useState(false);
   const [showOrderPlace, setShowOrderPlace] = useState(false);
 
-
   const REVIEW_SNOOZE_TIME = 60 * 60 * 1000; // 1 hour
   const REVIEW_SNOOZE_KEY = "product_review_snooze";
   const [pendingReviews, setPendingReviews] = useState([]);
@@ -175,9 +174,7 @@ const ProductPage = () => {
 
       const reviews = response?.data?.data || [];
 
-      // ==============================
       // 1 HOUR SNOOZE CHECK
-      // ==============================
       let snoozedReviews = {};
 
       try {
@@ -949,47 +946,25 @@ const ProductPage = () => {
 
           return;
         }
-
         toast.error(res.data?.message || "Unable to place COD order");
-
         return;
       }
 
-      // =========================
-      // ONLINE PAYMENT
-      // =========================
+  
       if (paymentMethod === "online") {
         try {
-          const res = await axios.post("/api/user/order/online", orderData);
-
-          if (res.data?.success) {
-            toast.success(
-              res.data?.message || "Payment initiated successfully",
-            );
-
-            if (res.data?.orderId) {
-              router.push(`/payment?orderId=${res.data.orderId}`);
-
-              return;
-            }
-
-            toast.error("Order ID not received.");
-
-            return;
+          const response = await axios.post("/api/user/order/online",orderData);
+          if (response.data.success && response.data.url) {
+            // Stripe Checkout page
+            window.location.href = response.data.url;
+          } else {
+            console.error("Stripe checkout URL not found");
           }
-
-          toast.error(res.data?.message || "Unable to initiate online payment");
-
-          return;
         } catch (error) {
-          console.error("ONLINE PAYMENT ERROR:", error);
-
-          toast.error(
-            error?.response?.data?.message ||
-              "Unable to initiate online payment",
+          console.error(
+            "ONLINE PAYMENT ERROR:",
+            error.response?.data || error.message,
           );
-
-          return;
         }
       }
     } catch (error) {

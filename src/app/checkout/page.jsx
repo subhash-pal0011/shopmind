@@ -476,9 +476,13 @@ const page = () => {
       if (paymentMethod === "online") {
 
         const res = await axios.post("/api/user/order/online",  orderData);
-        if(res.data.success){
-          toast.success(res.data.message)
-          router.push(`/payment?orderId=${res.data.orderId}`);
+        if (res.data?.success && res.data?.url) {
+          toast.success("Redirecting you to secure Stripe payment...");
+          window.location.assign(res.data.url);
+        } else {
+          throw new Error(
+            res.data?.message || "Unable to initialize Stripe payment.",
+          );
         }
 
         return;

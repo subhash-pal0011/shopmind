@@ -1,21 +1,14 @@
 import { NextResponse } from "next/server";
-
 import { auth } from "@/auth";
 import connectDb from "@/lib/connectDb";
-
 import User from "@/model/user";
 import Product from "@/model/product";
 import Order from "@/model/order";
-
 import stripe from "@/lib/stripe";
-
-// ======================================================
-// POST
-// CREATE ONLINE ORDER
-// ======================================================
 
 export async function POST(req) {
   try {
+   
     const session = await auth();
 
     if (!session?.user?.email) {
@@ -84,10 +77,6 @@ export async function POST(req) {
 
     await connectDb();
 
-    // --------------------------------------------------
-    // USER
-    // --------------------------------------------------
-
     const user = await User.findOne({
       email: session.user.email,
     });
@@ -102,10 +91,6 @@ export async function POST(req) {
       );
     }
 
-    // --------------------------------------------------
-    // PRODUCTS
-    // --------------------------------------------------
-
     const orderProducts = [];
 
     let subtotal = 0;
@@ -114,6 +99,7 @@ export async function POST(req) {
       const productId = item.productId;
       const quantity = Number(item.quantity);
 
+   
       if (!productId) {
         return NextResponse.json(
           {
@@ -124,6 +110,7 @@ export async function POST(req) {
         );
       }
 
+    
       if (!Number.isInteger(quantity) || quantity < 1) {
         return NextResponse.json(
           {
@@ -145,7 +132,6 @@ export async function POST(req) {
           { status: 404 }
         );
       }
-
       if (product.verificationStatus !== "approved") {
         return NextResponse.json(
           {
@@ -176,7 +162,18 @@ export async function POST(req) {
         );
       }
 
+    
       const price = Number(product.price);
+
+      if (!Number.isFinite(price) || price < 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: `Invalid price for ${product.title}.`,
+          },
+          { status: 400 }
+        );
+      }
 
       subtotal += price * quantity;
 
@@ -188,19 +185,36 @@ export async function POST(req) {
       });
     }
 
-    // --------------------------------------------------
-    // TOTAL
-    // --------------------------------------------------
+    const finalDeliveryCharge = Number(deliveryCharge) || 0;
 
-    const finalDeliveryCharge =
-      Number(deliveryCharge) || 0;
+    if (
+      !Number.isFinite(finalDeliveryCharge) ||
+      finalDeliveryCharge < 0
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid delivery charge.",
+        },
+        { status: 400 }
+      );
+    }
 
     const totalAmount =
       subtotal + finalDeliveryCharge;
 
-    // --------------------------------------------------
-    // CREATE ORDER
-    // --------------------------------------------------
+    if (
+      !Number.isFinite(totalAmount) ||
+      totalAmount <= 0
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid order amount.",
+        },
+        { status: 400 }
+      );
+    }
 
     const order = await Order.create({
       userId: user._id,
@@ -210,9 +224,11 @@ export async function POST(req) {
       address: {
         fullName: address.fullName,
         phone: address.phone,
+
         email:
           address.email?.trim() ||
           session.user.email,
+
         address: address.address,
         city: address.city,
         state: address.state,
@@ -232,83 +248,125 @@ export async function POST(req) {
 
       totalAmount,
 
-      orderStatus: "pending",
-
+      // Payment abhi nahi hua hai
       paymentStatus: "pending",
+
+      // Order abhi confirm nahi hua
+      orderStatus: "pending",
 
       stripePaymentIntentId: null,
     });
 
-    // --------------------------------------------------
-    // STRIPE PAYMENT INTENT
-    // --------------------------------------------------
-
-    let paymentIntent;
+    let checkoutSession;
 
     try {
-      paymentIntent =
-        await stripe.paymentIntents.create({
-          amount: Math.round(totalAmount * 100),
-
-          currency: "inr",
+      checkoutSession =
+        await stripe.checkout.sessions.create({
+          mode: "payment",
 
           payment_method_types: ["card"],
 
+          customer_email: session.user.email,
+          line_items: [
+            {
+              price_data: {
+                currency: "inr",
+
+                product_data: {
+                  name: "ShopMind Order",
+
+                  description:
+                    `Order ID: ${order._id.toString()}`,
+                },
+
+                unit_amount:
+                  Math.round(totalAmount * 100),
+              },
+
+              quantity: 1,
+            },
+          ],
+
+          success_url:
+            `${process.env.CLIENT_URL}/payment-success` +
+            `?session_id={CHECKOUT_SESSION_ID}` +
+            `&orderId=${order._id.toString()}`,
+
+        
+          cancel_url:
+            `${process.env.CLIENT_URL}/payment-failed` +
+            `?orderId=${order._id.toString()}`,
+
+         
+
           metadata: {
             orderId: order._id.toString(),
+
             userId: user._id.toString(),
+
             userEmail: session.user.email,
+          },
+
+      
+          payment_intent_data: {
+            metadata: {
+              orderId: order._id.toString(),
+
+              userId: user._id.toString(),
+
+              userEmail: session.user.email,
+            },
           },
         });
     } catch (stripeError) {
-      await Order.findByIdAndDelete(order._id);
-
       console.error(
-        "STRIPE ERROR:",
+        "STRIPE CHECKOUT ERROR:",
         stripeError
       );
+
+      await Order.findByIdAndDelete(order._id);
 
       return NextResponse.json(
         {
           success: false,
+
           message:
+            stripeError?.message ||
             "Unable to initialize Stripe payment.",
         },
         { status: 500 }
       );
     }
 
-    // --------------------------------------------------
-    // SAVE STRIPE ID
-    // --------------------------------------------------
+    if (checkoutSession.payment_intent) {
+      order.stripePaymentIntentId =
+        checkoutSession.payment_intent;
 
-    order.stripePaymentIntentId =
-      paymentIntent.id;
+      await order.save();
+    }
 
-    await order.save();
-
-    // --------------------------------------------------
-    // RESPONSE
-    // --------------------------------------------------
 
     return NextResponse.json(
       {
         success: true,
 
         message:
-          "Order created. Redirecting to payment.",
+          "Order created successfully.",
 
-        orderId: order._id.toString(),
+        orderId:
+          order._id.toString(),
 
-        paymentIntentId:
-          paymentIntent.id,
+        checkoutSessionId:
+          checkoutSession.id,
 
-        clientSecret:
-          paymentIntent.client_secret,
+        url:
+          checkoutSession.url,
 
-        amount: totalAmount,
+        amount:
+          totalAmount,
 
-        currency: "inr",
+        currency:
+          "inr",
       },
       { status: 201 }
     );
@@ -321,6 +379,7 @@ export async function POST(req) {
     return NextResponse.json(
       {
         success: false,
+
         message:
           error?.message ||
           "Failed to create online order.",
@@ -331,15 +390,9 @@ export async function POST(req) {
 }
 
 
-// ======================================================
-// GET
-// PAYMENT DETAILS
-// ======================================================
-
 export async function GET(req) {
   try {
-    console.log("GET ONLINE PAYMENT API CALLED");
-
+   
     const session = await auth();
 
     if (!session?.user?.email) {
@@ -370,10 +423,6 @@ export async function GET(req) {
 
     await connectDb();
 
-    // --------------------------------------------------
-    // USER
-    // --------------------------------------------------
-
     const user = await User.findOne({
       email: session.user.email,
     }).select("_id");
@@ -388,14 +437,13 @@ export async function GET(req) {
       );
     }
 
-    // --------------------------------------------------
-    // ORDER
-    // --------------------------------------------------
-
     const order = await Order.findOne({
       _id: orderId,
+
       userId: user._id,
-    });
+    }).select(
+      "paymentStatus orderStatus totalAmount stripePaymentIntentId"
+    );
 
     if (!order) {
       return NextResponse.json(
@@ -407,106 +455,33 @@ export async function GET(req) {
       );
     }
 
-    // --------------------------------------------------
-    // PAYMENT METHOD
-    // --------------------------------------------------
+    return NextResponse.json({
+      success: true,
 
-    if (order.paymentMethod !== "online") {
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "This is not an online payment order.",
-        },
-        { status: 400 }
-      );
-    }
+      paymentStatus:
+        order.paymentStatus,
 
-    // --------------------------------------------------
-    // ALREADY PAID
-    // --------------------------------------------------
+      orderStatus:
+        order.orderStatus,
 
-    if (order.paymentStatus === "paid") {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Order is already paid.",
-        },
-        { status: 400 }
-      );
-    }
+      amount:
+        order.totalAmount,
 
-    // --------------------------------------------------
-    // STRIPE PAYMENT INTENT
-    // --------------------------------------------------
-
-    let paymentIntent;
-
-    if (order.stripePaymentIntentId) {
-      paymentIntent =
-        await stripe.paymentIntents.retrieve(
-          order.stripePaymentIntentId
-        );
-    } else {
-      paymentIntent =
-        await stripe.paymentIntents.create({
-          amount: Math.round(
-            order.totalAmount * 100
-          ),
-
-          currency: "inr",
-
-          payment_method_types: ["card"],
-
-          metadata: {
-            orderId: order._id.toString(),
-            userId: user._id.toString(),
-            userEmail: session.user.email,
-          },
-        });
-
-      order.stripePaymentIntentId =
-        paymentIntent.id;
-
-      await order.save();
-    }
-
-    // --------------------------------------------------
-    // RESPONSE
-    // --------------------------------------------------
-
-    return NextResponse.json(
-      {
-        success: true,
-
-        message:
-          "Payment details fetched successfully.",
-
-        orderId: order._id.toString(),
-
-        amount: order.totalAmount,
-
-        currency: "inr",
-
-        paymentIntentId:
-          paymentIntent.id,
-
-        clientSecret:
-          paymentIntent.client_secret,
-      },
-      { status: 200 }
-    );
+      stripePaymentIntentId:
+        order.stripePaymentIntentId || null,
+    });
   } catch (error) {
     console.error(
-      "GET ONLINE PAYMENT ERROR:",
+      "GET ONLINE ORDER STATUS ERROR:",
       error
     );
 
     return NextResponse.json(
       {
         success: false,
+
         message:
-          "Unable to initialize payment.",
+          "Unable to check payment status.",
       },
       { status: 500 }
     );

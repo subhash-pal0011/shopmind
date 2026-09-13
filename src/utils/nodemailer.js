@@ -11,9 +11,9 @@ export async function sendMail(email, otp) {
               });
 
               const mailOptions = {
-                     from: `"AnnDaan" <${process.env.EMAIL}>`,
+                     from: `"Shopmind" <${process.env.EMAIL}>`,
                      to: email,
-                     subject: "Your OTP for Registration - AnnDaan",
+                     subject: "Your OTP for Registration - Shopmind",
                      html: `
                      <div style="font-family: Arial, sans-serif; padding: 20px;">
                          <h2 style="color: #2c3e50;">Welcome to Shopmind</h2>
@@ -28,7 +28,7 @@ export async function sendMail(email, otp) {
                          <p>If you did not request this, please ignore this email.</p>
 
                          <br/>
-                         <p>Thanks,<br/>AnnDaan Team</p>
+                         <p>Thanks,<br/>Shopmind Team</p>
                      </div> `
               };
 
