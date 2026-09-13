@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 import {
@@ -12,7 +12,8 @@ import {
   CreditCard,
 } from "lucide-react";
 
-export default function PaymentSuccess() {
+
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -25,7 +26,6 @@ export default function PaymentSuccess() {
   const [orderStatus, setOrderStatus] = useState("");
   const [amount, setAmount] = useState(null);
 
-
   useEffect(() => {
     if (!sessionId) {
       setError("Payment session not found.");
@@ -35,27 +35,21 @@ export default function PaymentSuccess() {
 
     const verifyPayment = async () => {
       try {
-        console.log("SESSION ID:", sessionId);
-        console.log("ORDER ID:", orderId);
-
         const response = await axios.get(
           `/api/payment/verify?session_id=${encodeURIComponent(
             sessionId
           )}&orderId=${encodeURIComponent(orderId || "")}`
         );
 
-        console.log("VERIFY RESPONSE:", response.data);
 
-        if (
-          response.data.success &&
-          response.data.paid
-        ) {
+        if (response.data.success && response.data.paid) {
           setPaymentStatus("paid");
+
           setOrderStatus(
             response.data.orderStatus || "confirmed"
           );
 
-          if (response.data.amount) {
+          if (response.data.amount !== undefined) {
             setAmount(response.data.amount);
           }
 
@@ -127,6 +121,7 @@ export default function PaymentSuccess() {
     );
   }
 
+
   if (paymentStatus === "paid") {
     return (
       <main className="min-h-screen bg-gray-200 flex items-center justify-center px-4 py-10">
@@ -178,9 +173,7 @@ export default function PaymentSuccess() {
                   <div className="flex items-center gap-3">
 
                     <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
-                      <ShoppingBag
-                        className="w-5 h-5 text-blue-600"
-                      />
+                      <ShoppingBag className="w-5 h-5 text-blue-600" />
                     </div>
 
                     <div>
@@ -203,9 +196,7 @@ export default function PaymentSuccess() {
                   <div className="flex items-center gap-3">
 
                     <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                      <CreditCard
-                        className="w-5 h-5 text-green-600"
-                      />
+                      <CreditCard className="w-5 h-5 text-green-600" />
                     </div>
 
                     <div>
@@ -220,9 +211,7 @@ export default function PaymentSuccess() {
 
                   </div>
 
-                  <CheckCircle2
-                    className="w-5 h-5 text-green-500"
-                  />
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
 
                 </div>
 
@@ -248,6 +237,7 @@ export default function PaymentSuccess() {
                 {/* Amount */}
                 {amount !== null && (
                   <div className="mt-4 pt-4 border-t border-slate-200 flex items-center justify-between">
+
                     <span className="text-sm text-slate-500">
                       Amount Paid
                     </span>
@@ -255,6 +245,7 @@ export default function PaymentSuccess() {
                     <span className="text-lg font-bold text-slate-900">
                       ₹{Number(amount).toLocaleString("en-IN")}
                     </span>
+
                   </div>
                 )}
 
@@ -278,28 +269,28 @@ export default function PaymentSuccess() {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    router.push("/products")
-                  }
-                  className="cursor-pointer group w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all duration-200 shadow-lg shadow-blue-600/20"
+                  onClick={() => router.push("/products")}
+                  className="cursor-pointer group w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all duration-200 shadow-lg shadow-blue-600/20 px-4 py-3.5"
                 >
-                  <ShoppingBag className="w-5" />
+                  <ShoppingBag className="w-5 h-5" />
 
-                  <p className="text-xs">View My Orders</p>
+                  <p className="text-xs">
+                    View My Orders
+                  </p>
 
-                  <ArrowRight className="w-4 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </button>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    router.push("/")
-                  }
+                  onClick={() => router.push("/")}
                   className="cursor-pointer w-full flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold px-5 py-3.5 transition-all duration-200"
                 >
                   <Home className="w-5 h-5" />
 
-                  <p className="text-xs">Continue Shopping</p>
+                  <p className="text-xs">
+                    Continue Shopping
+                  </p>
                 </button>
 
               </div>
@@ -318,7 +309,7 @@ export default function PaymentSuccess() {
     );
   }
 
-  // FAILED / PENDING UI
+
   return (
     <main className="min-h-screen bg-linear-to-br from-slate-50 via-white to-red-50 flex items-center justify-center px-4 py-10">
 
@@ -328,9 +319,7 @@ export default function PaymentSuccess() {
 
           {/* Error Icon */}
           <div className="mx-auto w-20 h-20 rounded-full bg-red-100 flex items-center justify-center">
-            <AlertCircle
-              className="w-11 h-11 text-red-500"
-            />
+            <AlertCircle className="w-11 h-11 text-red-500" />
           </div>
 
           <p className="mt-6 text-sm font-semibold uppercase tracking-wider text-red-500">
@@ -349,6 +338,7 @@ export default function PaymentSuccess() {
           {/* Order ID */}
           {orderId && (
             <div className="mt-6 rounded-xl bg-slate-50 border border-slate-200 p-4">
+
               <p className="text-xs text-slate-500">
                 Order ID
               </p>
@@ -356,6 +346,7 @@ export default function PaymentSuccess() {
               <p className="mt-1 text-sm font-semibold text-slate-800 break-all">
                 {orderId}
               </p>
+
             </div>
           )}
 
@@ -379,27 +370,27 @@ export default function PaymentSuccess() {
 
             <button
               type="button"
-              onClick={() =>
-                router.push("/")
-              }
+              onClick={() => router.push("/")}
               className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3.5 transition-all"
             >
               <Home className="w-5 h-5" />
 
-              <p className="text-xs">Continue Shopping</p>
+              <p className="text-xs">
+                Continue Shopping
+              </p>
             </button>
 
             {orderId && (
               <button
                 type="button"
-                onClick={() =>
-                  router.push("/orders")
-                }
-                className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold  transition-all"
+                onClick={() => router.push("/orders")}
+                className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold px-5 py-3.5 transition-all"
               >
                 <ShoppingBag className="w-5 h-5" />
 
-                <p className="text-xs">View Orders</p>
+                <p className="text-xs">
+                  View Orders
+                </p>
               </button>
             )}
 
@@ -409,5 +400,36 @@ export default function PaymentSuccess() {
 
       </div>
     </main>
+  );
+}
+
+
+export default function PaymentSuccess() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+          <div className="w-full max-w-md">
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
+
+              <div className="mx-auto mb-6 w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+              </div>
+
+              <h1 className="text-2xl font-bold text-slate-900">
+                Loading payment details
+              </h1>
+
+              <p className="mt-3 text-sm text-slate-500">
+                Please wait...
+              </p>
+
+            </div>
+          </div>
+        </main>
+      }
+    >
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
