@@ -1,141 +1,380 @@
+// import NextAuth from "next-auth";
+// import Credentials from "next-auth/providers/credentials";
+// import bcrypt from "bcryptjs";
+// import connectDb from "./lib/connectDb";
+// import User from "./model/user";
+// import Google from "next-auth/providers/google";
+
+// export const { handlers, signIn, signOut, auth } = NextAuth({
+//        providers: [
+//               Credentials({
+                     
+//                      name: "Credentials",
+
+//                      credentials: {
+//                             email: {
+//                                    label: "Email",
+//                                    type: "email",
+//                             },
+
+//                             password: {
+//                                    label: "Password",
+//                                    type: "password",
+//                             },
+//                      },
+
+//                      async authorize(credentials) {
+//                             try {
+//                                    await connectDb();
+
+//                                    const email = credentials?.email;
+//                                    const password = credentials?.password;
+
+//                                    if (!email || !password) {
+//                                           throw new Error("Email and Password are required");
+//                                    }
+
+//                                    const findUser = await User.findOne({ email });
+
+//                                    if (!findUser) {
+//                                           throw new Error("No user found with this email");
+//                                    }
+
+//                                    if (!findUser.userVerified) {
+//                                           throw new Error("Please verify your account first");
+//                                    }
+
+//                                    const comparePassword = await bcrypt.compare(
+//                                           password,
+//                                           findUser.password
+//                                    );
+
+//                                    if (!comparePassword) {
+//                                           throw new Error("Invalid credentials");
+//                                    }
+
+//                                    return {
+//                                           id: findUser._id.toString(),
+//                                           name: findUser.name,
+//                                           email: findUser.email,
+//                                           role: findUser.userRole,
+//                                    };
+//                             } catch (error) {
+//                                    throw new Error(error.message);
+//                             }
+//                      },
+//               }),
+
+//               Google({
+//                      clientId: process.env.GOOGLE_CLIENT_ID,
+//                      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+//               })
+//        ],
+
+//        callbacks: {
+
+//               async signIn({ user, account }) {
+//                      if (account.provider === "google") {
+//                             try {
+//                                    await connectDb();
+
+//                                    let findUser = await User.findOne({ email: user.email });
+
+//                                    if (!findUser) {
+//                                           findUser = await User.create({
+//                                                  name: user.name,
+//                                                  email: user.email,
+//                                                  provider: "google",
+//                                                  userVerified: true,
+//                                                  userRole: "user",
+//                                                  location: {
+//                                                         type: "Point",
+//                                                         coordinates: [0, 0],
+//                                                  },
+//                                           });
+//                                    }
+
+//                                    user.id = findUser._id.toString();
+//                                    user.role = findUser.userRole;
+
+//                                    return true;
+//                             } catch (error) {
+//                                    console.error("Google SignIn Error:", error);
+//                                    return false;
+//                             }
+//                      }
+//                      return true
+//               },
+//               async jwt({ token, user }) {
+//                      if (user) {
+//                             token.id = user.id;
+//                             token.name = user.name;
+//                             token.email = user.email;
+//                             token.role = user.role;
+//                      }
+
+//                      return token;
+//               },
+
+//               async session({ session, token }) {
+//                      if (session.user) {
+//                             session.user.id = token.id;
+//                             session.user.name = token.name;
+//                             session.user.email = token.email;
+//                             session.user.role = token.role;
+//                      }
+//                      return session;
+//               },
+//        },
+
+//        pages: { //Ye isliye use karte hain taki user login na ho to NextAuth ke default login page ki jagah hamara khud ka login page open ho.
+//               signIn: "/login",
+//        },
+
+//        session: {
+//               strategy: "jwt", // User ka session JWT token ki help se manage ho raha hai.
+//               maxAge: 10 * 24 * 60 * 60,
+//        },
+
+//        secret: process.env.AUTH_SECRET,
+// });
+
+
+
+
+
+
+
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
+
 import connectDb from "./lib/connectDb";
 import User from "./model/user";
-import Google from "next-auth/providers/google";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-       providers: [
-              Credentials({
-                     
-                     name: "Credentials",
+    providers: [
+        // ============================================
+        // CREDENTIALS LOGIN
+        // ============================================
+        Credentials({
+            name: "Credentials",
 
-                     credentials: {
-                            email: {
-                                   label: "Email",
-                                   type: "email",
+            credentials: {
+                email: {
+                    label: "Email",
+                    type: "email",
+                },
+
+                password: {
+                    label: "Password",
+                    type: "password",
+                },
+            },
+
+            async authorize(credentials) {
+                try {
+                    await connectDb();
+
+                    const email = credentials?.email;
+                    const password = credentials?.password;
+
+                    if (!email || !password) {
+                        throw new Error(
+                            "Email and Password are required"
+                        );
+                    }
+
+                    const findUser = await User.findOne({
+                        email: email.toString().toLowerCase(),
+                    });
+
+                    if (!findUser) {
+                        throw new Error(
+                            "No user found with this email"
+                        );
+                    }
+
+                    if (!findUser.userVerified) {
+                        throw new Error(
+                            "Please verify your account first"
+                        );
+                    }
+
+                    if (!findUser.password) {
+                        throw new Error(
+                            "This account does not have a password"
+                        );
+                    }
+
+                    const comparePassword = await bcrypt.compare(
+                        password.toString(),
+                        findUser.password
+                    );
+
+                    if (!comparePassword) {
+                        throw new Error("Invalid credentials");
+                    }
+
+                    return {
+                        id: findUser._id.toString(),
+                        name: findUser.name,
+                        email: findUser.email,
+                        role: findUser.userRole,
+                    };
+                } catch (error) {
+                    console.error(
+                        "Credentials Authorize Error:",
+                        error
+                    );
+
+                    throw new Error(
+                        error?.message || "Login failed"
+                    );
+                }
+            },
+        }),
+
+        // ============================================
+        // GOOGLE LOGIN
+        // ============================================
+        Google({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        }),
+    ],
+
+    callbacks: {
+        // ============================================
+        // SIGN IN
+        // ============================================
+        async signIn({ user, account }) {
+            if (account?.provider === "google") {
+                try {
+                    await connectDb();
+
+                    if (!user?.email) {
+                        console.error(
+                            "Google login: Email not found"
+                        );
+
+                        return false;
+                    }
+
+                    const email = user.email
+                        .toString()
+                        .toLowerCase();
+
+                    let findUser = await User.findOne({
+                        email,
+                    });
+
+                    // ------------------------------------
+                    // CREATE GOOGLE USER
+                    // ------------------------------------
+                    if (!findUser) {
+                        findUser = await User.create({
+                            name: user.name || "Google User",
+                            email,
+                            provider: "google",
+                            userVerified: true,
+
+                            // New Google user starts as normal user.
+                            // Choose Role API can later change it
+                            // to vendor.
+                            userRole: "user",
+
+                            location: {
+                                type: "Point",
+                                coordinates: [0, 0],
                             },
+                        });
+                    }
 
-                            password: {
-                                   label: "Password",
-                                   type: "password",
-                            },
-                     },
+                    // ------------------------------------
+                    // IMPORTANT
+                    // Always use DB user's actual role
+                    // ------------------------------------
+                    user.id = findUser._id.toString();
+                    user.role = findUser.userRole;
 
-                     async authorize(credentials) {
-                            try {
-                                   await connectDb();
+                    user.name = findUser.name;
+                    user.email = findUser.email;
 
-                                   const email = credentials?.email;
-                                   const password = credentials?.password;
+                    console.log(
+                        "Google Login User:",
+                        findUser.email
+                    );
 
-                                   if (!email || !password) {
-                                          throw new Error("Email and Password are required");
-                                   }
+                    console.log(
+                        "Google Login DB Role:",
+                        findUser.userRole
+                    );
 
-                                   const findUser = await User.findOne({ email });
+                    return true;
+                } catch (error) {
+                    console.error(
+                        "Google SignIn Error:",
+                        error
+                    );
 
-                                   if (!findUser) {
-                                          throw new Error("No user found with this email");
-                                   }
+                    return false;
+                }
+            }
 
-                                   if (!findUser.userVerified) {
-                                          throw new Error("Please verify your account first");
-                                   }
+            return true;
+        },
 
-                                   const comparePassword = await bcrypt.compare(
-                                          password,
-                                          findUser.password
-                                   );
+        // ============================================
+        // JWT
+        // ============================================
+        async jwt({ token, user }) {
+            // This runs when user logs in
+            if (user) {
+                token.id = user.id;
+                token.name = user.name;
+                token.email = user.email;
+                token.role = user.role;
+            }
 
-                                   if (!comparePassword) {
-                                          throw new Error("Invalid credentials");
-                                   }
+            return token;
+        },
 
-                                   return {
-                                          id: findUser._id.toString(),
-                                          name: findUser.name,
-                                          email: findUser.email,
-                                          role: findUser.userRole,
-                                   };
-                            } catch (error) {
-                                   throw new Error(error.message);
-                            }
-                     },
-              }),
+        // ============================================
+        // SESSION
+        // ============================================
+        async session({ session, token }) {
+            if (session.user) {
+                session.user.id = token.id;
+                session.user.name = token.name;
+                session.user.email = token.email;
+                session.user.role = token.role;
+            }
 
-              Google({
-                     clientId: process.env.GOOGLE_CLIENT_ID,
-                     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-              })
-       ],
+            return session;
+        },
+    },
 
-       callbacks: {
+    // ============================================
+    // CUSTOM LOGIN PAGE
+    // ============================================
+    pages: {
+        signIn: "/login",
+    },
 
-              async signIn({ user, account }) {
-                     if (account.provider === "google") {
-                            try {
-                                   await connectDb();
+    // ============================================
+    // SESSION
+    // ============================================
+    session: {
+        strategy: "jwt",
 
-                                   let findUser = await User.findOne({ email: user.email });
+        maxAge: 10 * 24 * 60 * 60,
+    },
 
-                                   if (!findUser) {
-                                          findUser = await User.create({
-                                                 name: user.name,
-                                                 email: user.email,
-                                                 provider: "google",
-                                                 userVerified: true,
-                                                 userRole: "user",
-                                                 location: {
-                                                        type: "Point",
-                                                        coordinates: [0, 0],
-                                                 },
-                                          });
-                                   }
-
-                                   user.id = findUser._id.toString();
-                                   user.role = findUser.userRole;
-
-                                   return true;
-                            } catch (error) {
-                                   console.error("Google SignIn Error:", error);
-                                   return false;
-                            }
-                     }
-                     return true
-              },
-              async jwt({ token, user }) {
-                     if (user) {
-                            token.id = user.id;
-                            token.name = user.name;
-                            token.email = user.email;
-                            token.role = user.role;
-                     }
-
-                     return token;
-              },
-
-              async session({ session, token }) {
-                     if (session.user) {
-                            session.user.id = token.id;
-                            session.user.name = token.name;
-                            session.user.email = token.email;
-                            session.user.role = token.role;
-                     }
-                     return session;
-              },
-       },
-
-       pages: { //Ye isliye use karte hain taki user login na ho to NextAuth ke default login page ki jagah hamara khud ka login page open ho.
-              signIn: "/login",
-       },
-
-       session: {
-              strategy: "jwt", // User ka session JWT token ki help se manage ho raha hai.
-              maxAge: 10 * 24 * 60 * 60,
-       },
-
-       secret: process.env.AUTH_SECRET,
+    // ============================================
+    // SECRET
+    // ============================================
+    secret: process.env.AUTH_SECRET,
 });
 

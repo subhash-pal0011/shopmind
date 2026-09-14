@@ -3,66 +3,136 @@ import cloudinary from "@/lib/cloudinary";
 import connectDb from "@/lib/connectDb";
 import eventHandler from "@/lib/eventHandlor";
 import Product from "@/model/product";
+import User from "@/model/user";
 import { NextResponse } from "next/server";
-
 
 export async function POST(request) {
   try {
     await connectDb();
-
     const session = await auth();
 
-    if (!session?.user) {
+    if (!session?.user?.id) {
       return NextResponse.json(
-        { success: false, message: "Please login first" },
-        { status: 401 },
+        {
+          success: false,
+          message: "Please login first",
+        },
+        { status: 401 }
       );
     }
 
-    if (session.user.role !== "vendor") {
+    const findUser = await User.findById(session.user.id).select(
+      "_id name email userRole userVerified approvalStatus"
+    );
+
+    if (!findUser) {
       return NextResponse.json(
-        { success: false, message: "Only vendors can add products" },
-        { status: 403 },
+        {
+          success: false,
+          message: "User not found",
+        },
+        { status: 404 }
       );
     }
 
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET){
-      console.error("Cloudinary environment variables are missing");
+    if (!findUser.userVerified) {
       return NextResponse.json(
-        {success: false, message: "Cloudinary configuration is missing"},
-        { status: 500 },
+        {
+          success: false,
+          message: "Please verify your account first",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (findUser.userRole !== "vendor") {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Only vendors can add products",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (findUser.approvalStatus !== "approved") {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "Your vendor account is not approved yet",
+        },
+        { status: 403 }
+      );
+    }
+
+    if (
+      !process.env.CLOUDINARY_CLOUD_NAME ||
+      !process.env.CLOUDINARY_API_KEY ||
+      !process.env.CLOUDINARY_API_SECRET
+    ) {
+      console.error(
+        "Cloudinary environment variables are missing"
+      );
+
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Cloudinary configuration is missing",
+        },
+        { status: 500 }
       );
     }
 
     const formData = await request.formData();
 
     const ProductTitle =
-      formData.get("ProductTitle")?.toString().trim() || "";
+      formData
+        .get("ProductTitle")
+        ?.toString()
+        .trim() || "";
 
     const Price = Number(formData.get("Price"));
 
-    const StockQuantity = Number(formData.get("StockQuantity"));
+    const StockQuantity = Number(
+      formData.get("StockQuantity")
+    );
 
     const Category =
-      formData.get("Category")?.toString().trim() || "";
+      formData
+        .get("Category")
+        ?.toString()
+        .trim() || "";
 
     const Size =
-      formData.get("Size")?.toString().trim() || "";
+      formData
+        .get("Size")
+        ?.toString()
+        .trim() || "";
 
     const Description =
-      formData.get("Description")?.toString().trim() || "";
+      formData
+        .get("Description")
+        ?.toString()
+        .trim() || "";
 
-    const ReplaceDay =
-      Number(formData.get("ReplaceDay") || 0);
+    const ReplaceDay = Number(
+      formData.get("ReplaceDay") || 0
+    );
 
     const Warranty =
-      formData.get("Warranty")?.toString().trim() || "";
+      formData
+        .get("Warranty")
+        ?.toString()
+        .trim() || "";
 
     const freeDelivery =
-      formData.get("freeDelivery")?.toString() === "true";
+      formData.get("freeDelivery")?.toString() ===
+      "true";
 
     const payOnDelivery =
-      formData.get("payOnDelivery")?.toString() === "true";
+      formData.get("payOnDelivery")?.toString() ===
+      "true";
 
     const detailsPoint = [];
 
@@ -71,29 +141,48 @@ export async function POST(request) {
         .get(`Point${i}`)
         ?.toString()
         .trim();
+
       if (point) {
         detailsPoint.push(point);
       }
     }
 
-    if (ProductTitle.length < 3 || ProductTitle.length > 100) {
+
+    if (
+      ProductTitle.length < 3 ||
+      ProductTitle.length > 100
+    ) {
       return NextResponse.json(
-        {success: false, message:"Product title must be between 3 and 100 characters"},
-        { status: 400 },
+        {
+          success: false,
+          message:
+            "Product title must be between 3 and 100 characters",
+        },
+        { status: 400 }
       );
     }
 
     if (!Number.isFinite(Price) || Price < 1) {
       return NextResponse.json(
-        {success: false, message: "Product price must be at least 1"},
-        { status: 400 },
+        {
+          success: false,
+          message: "Product price must be at least 1",
+        },
+        { status: 400 }
       );
     }
 
-    if (!Number.isFinite(StockQuantity) || StockQuantity < 0) {
+
+    if (
+      !Number.isFinite(StockQuantity) ||
+      StockQuantity < 0
+    ) {
       return NextResponse.json(
-        {success: false, message: "Invalid stock quantity"},
-        { status: 400 },
+        {
+          success: false,
+          message: "Invalid stock quantity",
+        },
+        { status: 400 }
       );
     }
 
@@ -103,28 +192,35 @@ export async function POST(request) {
           success: false,
           message: "Category is required",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    if (!Description || Description.length < 10 || Description.length > 1000){
+    if (
+      !Description ||
+      Description.length < 10 ||
+      Description.length > 1000
+    ) {
       return NextResponse.json(
         {
           success: false,
           message:
             "Description must be between 10 and 1000 characters",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    if (!Number.isFinite(ReplaceDay) || ReplaceDay < 0) {
+    if (
+      !Number.isFinite(ReplaceDay) ||
+      ReplaceDay < 0
+    ) {
       return NextResponse.json(
         {
           success: false,
           message: "Invalid replacement days",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -132,19 +228,25 @@ export async function POST(request) {
       return NextResponse.json(
         {
           success: false,
-          message: "Warranty cannot exceed 100 characters",
+          message:
+            "Warranty cannot exceed 100 characters",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    if ((Category === "Clothing" || Category === "Shoes") && !Size) {
+    if (
+      (Category === "Clothing" ||
+        Category === "Shoes") &&
+      !Size
+    ) {
       return NextResponse.json(
         {
           success: false,
-          message: "Size is required for clothing and shoes",
+          message:
+            "Size is required for clothing and shoes",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -155,18 +257,24 @@ export async function POST(request) {
           file &&
           typeof file === "object" &&
           typeof file.arrayBuffer === "function" &&
-          file.size > 0,
+          file.size > 0
       );
+
 
     if (imageFiles.length === 0) {
       return NextResponse.json(
         {
           success: false,
-          message: "At least one product image is required",
+          message:
+            "At least one product image is required",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
+
+    // =========================================
+    // MAXIMUM 4 IMAGES
+    // =========================================
 
     if (imageFiles.length > 4) {
       return NextResponse.json(
@@ -174,9 +282,13 @@ export async function POST(request) {
           success: false,
           message: "Maximum 4 images are allowed",
         },
-        { status: 400 },
+        { status: 400 }
       );
     }
+
+    // =========================================
+    // CLOUDINARY UPLOAD
+    // =========================================
 
     const uploadedImages = [];
 
@@ -186,44 +298,61 @@ export async function POST(request) {
 
         const buffer = Buffer.from(bytes);
 
-        const uploadedImage = await new Promise((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
-            {
-              folder: "products",
-              resource_type: "image",
-            },
-            (error, result) => {
-              if (error) {
-                reject(error);
-                return;
-              }
+        const uploadedImage =
+          await new Promise((resolve, reject) => {
+            const uploadStream =
+              cloudinary.uploader.upload_stream(
+                {
+                  folder: "products",
+                  resource_type: "image",
+                },
+                (error, result) => {
+                  if (error) {
+                    reject(error);
+                    return;
+                  }
 
-              resolve(result);
-            },
-          );
+                  resolve(result);
+                }
+              );
 
-          uploadStream.end(buffer);
-        });
+            uploadStream.end(buffer);
+          });
 
         if (!uploadedImage?.secure_url) {
-          throw new Error("Cloudinary did not return secure_url");
+          throw new Error(
+            "Cloudinary did not return secure_url"
+          );
         }
 
-        uploadedImages.push(uploadedImage.secure_url);
+        uploadedImages.push(
+          uploadedImage.secure_url
+        );
       } catch (cloudinaryError) {
         console.error(
           "CLOUDINARY UPLOAD ERROR:",
-          cloudinaryError,
+          cloudinaryError
         );
 
         return NextResponse.json(
-          {success: false, message:"Image upload failed. Please check Cloudinary configuration.",
-            error:process.env.NODE_ENV === "development" ? cloudinaryError?.message : undefined,
+          {
+            success: false,
+            message:
+              "Image upload failed. Please check Cloudinary configuration.",
+
+            error:
+              process.env.NODE_ENV === "development"
+                ? cloudinaryError?.message
+                : undefined,
           },
-          { status: 502 },
+          { status: 502 }
         );
       }
     }
+
+    // =========================================
+    // CREATE PRODUCT
+    // =========================================
 
     const product = await Product.create({
       title: ProductTitle,
@@ -236,7 +365,9 @@ export async function POST(request) {
 
       isStockAvailable: StockQuantity > 0,
 
-      vendorUser: session.user.id,
+      // IMPORTANT:
+      // DB user ki actual ID
+      vendorUser: findUser._id,
 
       productImg: uploadedImages,
 
@@ -248,37 +379,54 @@ export async function POST(request) {
 
       warranty: Warranty,
 
-      freeDelivery: freeDelivery,
+      freeDelivery,
 
-      payOnDelivery: payOnDelivery,
+      payOnDelivery,
 
       detailsPoint,
 
+      // Admin verification ke liye
       verificationStatus: "pending",
 
+      // Approval ke baad active hoga
       isActive: false,
 
       requestAt: new Date(),
     });
 
-    // REAL TIME
-    eventHandler("product:created", product)
+
+    eventHandler(
+      "product:created",
+      product
+    );
+
 
     return NextResponse.json(
       {
         success: true,
-        message:"Product added successfully and sent for verification",
+        message:
+          "Product added successfully and sent for verification",
+        productId: product._id,
       },
-      { status: 201 },
+      { status: 201 }
     );
   } catch (error) {
-    console.error("ADD PRODUCT ERROR:", error);
+    console.error(
+      "ADD PRODUCT ERROR:",
+      error
+    );
+
     return NextResponse.json(
-      {success: false, message: "Failed to add product",
-       error:process.env.NODE_ENV === "development" ? error?.message : undefined,
+      {
+        success: false,
+        message: "Failed to add product",
+
+        error:
+          process.env.NODE_ENV === "development"
+            ? error?.message
+            : undefined,
       },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
-
